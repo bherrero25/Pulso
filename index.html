@@ -7461,7 +7461,7 @@ let pinMode = 'check'; // 'check' | 'setup' | 'confirm'
 let pinSetupFirst = '';
 
 function initPin() {
-  document.getElementById('pinScreen').classList.add('hidden');
+  const stored = localStorage.getItem('wl_pin');   if (stored) {     pinMode = 'check';     document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';     document.getElementById('pinScreen').classList.remove('hidden');   } else {     pinMode = 'setup';     document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';     document.getElementById('pinScreen').classList.remove('hidden');   }
 }
 
 function pinPress(digit) {
@@ -7489,7 +7489,7 @@ function handlePinComplete() {
   const stored = localStorage.getItem('wl_pin');
   if (pinMode === 'check') {
     if (pinBuffer === stored) {
-      document.getElementById('pinScreen').classList.add('hidden');
+      const stored = localStorage.getItem('wl_pin');   if (stored) {     pinMode = 'check';     document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';     document.getElementById('pinScreen').classList.remove('hidden');   } else {     pinMode = 'setup';     document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';     document.getElementById('pinScreen').classList.remove('hidden');   }
     } else {
       showPinError('PIN incorrecto, inténtalo de nuevo');
     }
@@ -7503,7 +7503,7 @@ function handlePinComplete() {
   } else if (pinMode === 'confirm') {
     if (pinBuffer === pinSetupFirst) {
       localStorage.setItem('wl_pin', pinBuffer);
-      document.getElementById('pinScreen').classList.add('hidden');
+      const stored = localStorage.getItem('wl_pin');   if (stored) {     pinMode = 'check';     document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';     document.getElementById('pinScreen').classList.remove('hidden');   } else {     pinMode = 'setup';     document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';     document.getElementById('pinScreen').classList.remove('hidden');   }
       document.getElementById('pinHint').textContent = '';
     } else {
       pinMode = 'setup';
