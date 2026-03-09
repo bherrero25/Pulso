@@ -1,4 +1,5 @@
 
+
 <!-- saved from url=(0034)https://pulso-betsabe.netlify.app/ -->
 <html lang="es" data-theme="crema"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
@@ -7461,7 +7462,18 @@ let pinMode = 'check'; // 'check' | 'setup' | 'confirm'
 let pinSetupFirst = '';
 
 function initPin() {
-  document.getElementById('pinScreen').classList.add('hidden');
+  const stored = localStorage.getItem('wl_pin');
+  if (stored) {
+    pinMode = 'check';
+    document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';
+    document.getElementById('pinHint').textContent = '';
+    document.getElementById('pinScreen').classList.remove('hidden');
+  } else {
+    pinMode = 'setup';
+    document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';
+    document.getElementById('pinHint').textContent = '';
+    document.getElementById('pinScreen').classList.remove('hidden');
+  }
 }
 
 function pinPress(digit) {
@@ -7494,24 +7506,8 @@ function handlePinComplete() {
       showPinError('PIN incorrecto, inténtalo de nuevo');
     }
   } else if (pinMode === 'setup') {
-    pinSetupFirst = pinBuffer;
-    pinMode = 'confirm';
-    document.getElementById('pinSubtitle').textContent = 'Confirma tu PIN';
-    document.getElementById('pinHint').textContent = 'Repite el mismo PIN para confirmar.';
-    pinBuffer = '';
-    updatePinDots();
-  } else if (pinMode === 'confirm') {
-    if (pinBuffer === pinSetupFirst) {
-      localStorage.setItem('wl_pin', pinBuffer);
-      document.getElementById('pinScreen').classList.add('hidden');
-      document.getElementById('pinHint').textContent = '';
-    } else {
-      pinMode = 'setup';
-      pinSetupFirst = '';
-      document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';
-      document.getElementById('pinHint').textContent = 'Los PINs no coincidían. Empieza de nuevo.';
-      showPinError('Los PINs no coinciden');
-    }
+    localStorage.setItem('wl_pin', pinBuffer);
+    document.getElementById('pinScreen').classList.add('hidden');
   }
 }
 
