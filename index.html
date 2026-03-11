@@ -11254,15 +11254,6 @@ function renderEfectivo() {
   }).join('');
 }
 
-
-
-  const mesActual = new Date().toISOString().substring(0,7);
-  const txEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo');
-  const txEfectivoMes = txEfectivo.filter(t => t.fecha.startsWith(mesActual));
-
-  const gastadoMes = txEfectivoMes.filter(t => t.tipo === 'Gasto').reduce((s,t) => s + t.importe, 0);
-  const gastadoTotal = txEfectivo.filter(t => t.tipo === 'Gasto').reduce((s,t) => s + t.importe, 0);
-
 function renderCierre() {
   populateCierreMesFilter();
   const sel = document.getElementById('cierreMesFilter');
