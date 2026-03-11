@@ -3059,17 +3059,18 @@
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header">
-        <div class="card-title">Fondos de Inversión</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="exportCarteraXLS()">📥 Exportar XLS</button>
-          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importar CSV</button>
-          <input type="file" id="investingFile" accept=".csv" style="display:none" onchange="importInvesting(this)">
-          <button class="btn btn-gold" style="font-size:12px;padding:5px 12px;" onclick="openModal(&#39;modalFund&#39;)">+ Fondo</button>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Fondos de Inversión</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="exportCarteraXLS()">📥 XLS</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importar CSV</button>
+            <input type="file" id="investingFile" accept=".csv" style="display:none" onchange="importInvesting(this)">
+            <button class="btn btn-gold" style="font-size:12px;padding:5px 12px;" onclick="openModal(&#39;modalFund&#39;)">+ Fondo</button>
+          </div>
         </div>
-      </div>
-      <div class="card-body" id="fundList">
+        <div class="card-body" id="fundList">
         <div class="fund-row">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
@@ -3374,8 +3375,16 @@
           <div style="font-size:11px;color:var(--muted);margin-top:4px">Coste: 1000&nbsp;€ · Peso: 2.0%</div>
         </div>
       </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Distribución Cartera</div></div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:200px"><canvas id="chartFunds" style="box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas></div>
+          <div id="legendFunds" style="margin-top:12px;"><div class="legend-item"><div class="legend-dot" style="background:#8b6914"></div><span style="font-size:12px">Pictet - Robotics P EUR</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a5c"></div><span style="font-size:12px">Vanguard Global Stock Index Inv EUR</span><span class="legend-pct">6%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d5a8a"></div><span style="font-size:12px">Vanguard Global Small-Cap Index Fund EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#9b3535"></div><span style="font-size:12px">Magallanes Value Investors UCITS European Equity R</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a5c8b"></div><span style="font-size:12px">T. Rowe Price Funds SICAV - US Smaller Companies E</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#b8901f"></div><span style="font-size:12px">Bellevue Funds Lux BB Adamant Medtech B EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#2d6b5e"></div><span style="font-size:12px">MFS Meridian Funds - Prudent Wealth Fund A1 EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a3d3d"></div><span style="font-size:12px">Flossbach von Storch - Multiple Opportunities II E</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c6b8b"></div><span style="font-size:12px">Pictet-Water P EUR</span><span class="legend-pct">3%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b7a3d"></div><span style="font-size:12px">Fundsmith Equity Fund Feeder T EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#4a7a6b"></div><span style="font-size:12px">DPAM INVEST B - Equities NewGems Sustainable B Cap</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#6b3d7a"></div><span style="font-size:12px">Robeco Global Consumer Trends Equities D €</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b5c3d"></div><span style="font-size:12px">Fidelity Funds - Global Technology Fund A-Acc-EUR</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a4a"></div><span style="font-size:12px">Seilern Stryx World Growth EUR U</span><span class="legend-pct">9%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a6b3d"></div><span style="font-size:12px">Amundi Index Solutions   Amundi Index MSCI World A</span><span class="legend-pct">13%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c3d7a"></div><span style="font-size:12px">Amundi Index Solutions - Amundi Index MSCI Emergin</span><span class="legend-pct">2%</span></div></div>
+        </div>
+      </div>
+    </div>
 
-    
     <!-- HISTÓRICO CARTERA -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
@@ -3575,7 +3584,7 @@
         <div class="teso-sub" id="teso-ing-count">en cuenta</div>
         <div class="teso-arrow">→</div>
       </div>
-      <div class="teso-block" id="teso-efectivo-row">
+      <div class="teso-block">
         <div class="teso-label">+ Ingresos efectivo</div>
         <div class="teso-value" style="color:var(--accent)" id="teso-efectivo">—</div>
         <div class="teso-sub">No va a cuenta</div>
@@ -8276,65 +8285,51 @@ function renderFunds() {
   if (funds.length === 0) {
     list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Añade tus fondos de inversión</div>';
   } else {
-    // Cabecera tabla
-    const headerHtml = `<div style="display:grid;grid-template-columns:2fr 90px 90px 90px 90px 90px 60px;gap:4px;padding:8px 16px;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border)">
-      <span>Fondo</span>
-      <span style="text-align:right">Coste</span>
-      <span style="text-align:right">Valor actual</span>
-      <span style="text-align:right">+/− €</span>
-      <span style="text-align:right">Rent. total</span>
-      <span style="text-align:right">Rent. año</span>
-      <span style="text-align:right"></span>
-    </div>`;
-
-    const hoy = new Date();
-    const inicioAnio = new Date(hoy.getFullYear(), 0, 1);
-
-    const rowsHtml = funds.map((f,i) => {
+    list.innerHTML = funds.map((f,i) => {
       const diff = f.valor - f.coste;
-      const pctTotal = f.coste ? (diff/f.coste*100) : 0;
+      const pct = f.coste ? (diff/f.coste*100).toFixed(1) : 0;
       const weight = total ? (f.valor/total*100).toFixed(1) : 0;
-
-      // Rentabilidad del año: buscar en histórico el valor más cercano a 1 enero
-      let rentAnio = null;
-      if (historicoCartera && historicoCartera.length > 0) {
-        const snapsAnio = historicoCartera
-          .filter(s => s.fecha >= hoy.getFullYear() + '-01-01' && s.fecha <= hoy.getFullYear() + '-01-15')
-          .sort((a,b) => a.fecha.localeCompare(b.fecha));
-        if (snapsAnio.length > 0) {
-          const fondoSnap = snapsAnio[snapsAnio.length-1].fondos?.find(x => x.ticker === f.ticker);
-          if (fondoSnap && fondoSnap.valor > 0) {
-            rentAnio = (f.valor - fondoSnap.valor) / fondoSnap.valor * 100;
-          }
-        }
-      }
-
-      // Semáforo basado en rentabilidad total
-      const semaforo = pctTotal >= 20 ? '🟢' : pctTotal >= 5 ? '🟡' : pctTotal >= 0 ? '🟠' : '🔴';
-      const colorTotal = pctTotal >= 0 ? 'var(--green)' : 'var(--red)';
-      const colorAnio = rentAnio === null ? 'var(--muted)' : rentAnio >= 0 ? 'var(--green)' : 'var(--red)';
-
-      return `<div style="display:grid;grid-template-columns:2fr 90px 90px 90px 90px 90px 60px;gap:4px;padding:11px 16px;border-bottom:1px solid var(--surface2);align-items:center">
-        <div>
-          <div style="font-size:12px;font-weight:500">${semaforo} ${f.nombre.length > 32 ? f.nombre.substring(0,32)+'…' : f.nombre}</div>
-          <div style="font-size:10px;color:var(--muted)">${f.gestora} · ${weight}% cartera</div>
+      return `
+        <div class="fund-row">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="fund-name">${f.nombre}</div>
+              <div class="fund-ticker">${f.ticker} · ${f.gestora}</div>
+            </div>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px" title="Actualizar valor">✏️</button>
+              <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px" title="Eliminar">✕</button>
+            </div>
+          </div>
+          <div class="fund-meta">
+            <span style="font-family:var(--font-mono);font-size:13px">${fmt(f.valor)}</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:${weight}%"></div></div>
+            <span class="${diff>=0?'amount-pos':'amount-neg'}" style="font-size:12px">${diff>=0?'+':''}${pct}%</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Coste: ${fmt(f.coste)} · Peso: ${weight}%</div>
         </div>
-        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:var(--muted)">${fmt(f.coste)}</div>
-        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:600">${fmt(f.valor)}</div>
-        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorTotal}">${diff>=0?'+':''}${fmt(Math.abs(diff))}</div>
-        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:600;color:${colorTotal}">${diff>=0?'+':''}${pctTotal.toFixed(1)}%</div>
-        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorAnio}">${rentAnio !== null ? (rentAnio>=0?'+':'')+rentAnio.toFixed(1)+'%' : '—'}</div>
-        <div style="display:flex;gap:2px;justify-content:flex-end">
-          <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Actualizar valor">✏️</button>
-          <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Eliminar">✕</button>
-        </div>
-      </div>`;
+      `;
     }).join('');
-
-    list.innerHTML = headerHtml + rowsHtml;
   }
 
-  // Distribución cartera eliminada - ahora tabla expandida
+  // Donut funds
+  if (chartFunds) chartFunds.destroy();
+  if (funds.length > 0) {
+    const ctx = document.getElementById('chartFunds').getContext('2d');
+    chartFunds = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: funds.map(f=>f.nombre),
+        datasets: [{ data: funds.map(f=>f.valor), backgroundColor: COLORS.slice(0,funds.length), borderWidth:0, hoverOffset:8 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{legend:{display:false}} }
+    });
+    const legF = document.getElementById('legendFunds');
+    legF.innerHTML = funds.map((f,i) => {
+      const w = total ? Math.round(f.valor/total*100) : 0;
+      return `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i]}"></div><span style="font-size:12px">${f.nombre}</span><span class="legend-pct">${w}%</span></div>`;
+    }).join('');
+  }
 }
 
 // ===== PATRIMONIO =====
@@ -8351,46 +8346,20 @@ function renderPatrimonio() {
   if (activos.length === 0) {
     listA.innerHTML = '<div class="empty-state"><div class="empty-icon">🏦</div>Añade tus activos</div>';
   } else {
-    // Calcular saldo efectivo disponible desde transacciones
-    const txIng = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
-    const txGas = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
-    const saldoEfectivo = Math.max(0, txIng - txGas);
-
-    // Calcular saldo cuenta corriente (mes más reciente)
-    const meses = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
-    const mesMasReciente = meses.length ? meses[meses.length-1] : null;
-    let saldoCuenta = 0;
-    if (mesMasReciente) {
-      const siMes = parseFloat(saldosIniciales[mesMasReciente] || 0);
-      const txMes = transactions.filter(t => t.fecha.startsWith(mesMasReciente));
-      const ingCuenta = txMes.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
-      const gasCuenta = txMes.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
-      saldoCuenta = siMes + ingCuenta - gasCuenta;
-    }
-
-    listA.innerHTML = activos.map(a => {
-      // Para Cuenta bancaria: mostrar saldo calculado de tesorería
-      const esCuenta = a.tipo === 'Cuenta bancaria';
-      const esInversion = a.tipo === 'Inversiones';
-      const valorMostrar = a.valor;
-      const subTexto = esCuenta
-        ? `<div style="font-size:10px;color:var(--muted)">Cuenta corriente: <span style="color:var(--green);font-family:var(--font-mono)">${fmt(saldoCuenta)}</span> · Efectivo: <span style="color:var(--accent);font-family:var(--font-mono)">${fmt(saldoEfectivo)}</span></div>`
-        : '';
-      return `
+    listA.innerHTML = activos.map(a => `
       <div class="fund-row" style="padding:10px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div style="flex:1;min-width:0">
             <div class="fund-name" id="activo-nombre-${a.id}" ondblclick="editActivoNombre(${a.id})" title="Doble clic para editar nombre" style="cursor:pointer">${a.nombre}</div>
             <div class="fund-ticker">${a.tipo}</div>
-            ${subTexto}
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" title="Clic para editar valor" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${fmt(valorMostrar)}</span>
+            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" title="Clic para editar valor" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${fmt(a.valor)}</span>
             <button onclick="deleteActivo(${a.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">✕</button>
           </div>
         </div>
-      </div>`;
-    }).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
+      </div>
+    `).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
   }
 
   const listP = document.getElementById('pasivosList');
@@ -8685,15 +8654,10 @@ function renderTesoreria() {
   const filter = document.getElementById('tesoMonthFilter') ? document.getElementById('tesoMonthFilter').value : 'all';
   const txs = getFilteredTx(filter);
 
-  // Separar ingresos: cuenta (no efectivo) vs efectivo
-  const ingresosEfectivo = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
-  const ingresosCuenta   = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+  const ingEfectivo   = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
+  const ingCuenta     = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+  const gasCuenta     = txs.filter(t=>t.tipo==='Gasto'   && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
 
-  // Separar gastos: cuenta (no efectivo) vs efectivo
-  const gastosEfectivo = txs.filter(t=>t.tipo==='Gasto' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
-  const gastosCuenta   = txs.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
-
-  // Saldo inicial cuenta corriente
   let saldoInicial = 0;
   if (filter !== 'all') {
     saldoInicial = parseFloat(saldosIniciales[filter] || 0);
@@ -8701,25 +8665,14 @@ function renderTesoreria() {
     const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
     if (months.length) saldoInicial = parseFloat(saldosIniciales[months[0]] || 0);
   }
+  const saldoFinal = saldoInicial + ingCuenta - gasCuenta;
 
-  // Saldo final cuenta corriente = saldo inicial + ingresos cuenta - gastos cuenta
-  const saldoFinal = saldoInicial + ingresosCuenta - gastosCuenta;
-
-  // Actualizar los 4 bloques principales + efectivo
   document.getElementById('teso-inicial').textContent = fmt(saldoInicial);
-  document.getElementById('teso-ingresos').textContent = fmt(ingresosCuenta);
-  document.getElementById('teso-gastos').textContent = fmt(gastosCuenta);
+  document.getElementById('teso-ingresos').textContent = fmt(ingCuenta);
+  document.getElementById('teso-gastos').textContent = fmt(gasCuenta);
+  const efEl = document.getElementById('teso-efectivo');
+  if (efEl) efEl.textContent = fmt(ingEfectivo);
 
-  // Bloque efectivo
-  const tesoEfEl = document.getElementById('teso-efectivo');
-  if (tesoEfEl) tesoEfEl.textContent = fmt(ingresosEfectivo);
-  const tesoEfRow = document.getElementById('teso-efectivo-row');
-  if (tesoEfRow) tesoEfRow.style.display = '';
-
-  document.getElementById('teso-ing-count').textContent = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').length + ' en cuenta';
-  document.getElementById('teso-gas-count').textContent = txs.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').length + ' en cuenta';
-
-  // Cuotas de ahorro
   let cuotasAhorroMes = 0;
   if (filter !== 'all') {
     (gastosExtra || []).forEach(e => {
@@ -8733,6 +8686,8 @@ function renderTesoreria() {
   const saldoFinalConAhorro = saldoFinal - cuotasAhorroMes;
   document.getElementById('teso-final').textContent = fmt(saldoFinalConAhorro);
   document.getElementById('teso-final').style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('teso-ing-count').textContent = txs.filter(t=>t.tipo==='Ingreso'&&t.cuenta!=='Efectivo').length + ' en cuenta';
+  document.getElementById('teso-gas-count').textContent = txs.filter(t=>t.tipo==='Gasto'&&t.cuenta!=='Efectivo').length + ' en cuenta';
 
   // Saldo inicial table por mes
   const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
@@ -8764,7 +8719,7 @@ function renderTesoreria() {
     `;
   }
 
-  // Budget vs Real — usar exactamente el mes seleccionado en el filtro
+  // Budget vs Real — usar exactamente el mes seleccionado
   const budgetFilter = filter;
   const budgetTxs = getFilteredTx(budgetFilter);
   const catData = {};
@@ -9784,50 +9739,28 @@ function renderTIR() {
     return;
   }
 
-  // Calcular años desde inicio real de inversión
-  // Fecha de inicio de la cartera: abril 2020 (primera compra)
   const fechaInicioCartera = new Date('2020-04-01');
   const hoy = new Date();
-  const añosTotales = (hoy - fechaInicioCartera) / (1000 * 60 * 60 * 24 * 365.25);
-
-  // Para cada fondo, intentar detectar fecha primera aparición en histórico
-  // Si no hay histórico, usar la fecha de inicio de cartera
-  const getFechaInicio = (f) => {
-    if (historicoCartera && historicoCartera.length > 0) {
-      const primerSnap = [...historicoCartera]
-        .sort((a,b) => a.fecha.localeCompare(b.fecha))
-        .find(s => s.fondos?.some(x => x.ticker === f.ticker));
-      if (primerSnap) {
-        return new Date(primerSnap.fecha);
-      }
-    }
-    return fechaInicioCartera;
-  };
+  const añosBase = Math.max(0.5, (hoy - fechaInicioCartera) / (1000*60*60*24*365.25));
 
   const fondosOrdenados = [...funds].sort((a,b) => {
-    const añosA = Math.max(0.5, (hoy - getFechaInicio(a)) / (1000*60*60*24*365.25));
-    const añosB = Math.max(0.5, (hoy - getFechaInicio(b)) / (1000*60*60*24*365.25));
-    const tirA = calcTIR(a.coste, a.valor, añosA) || -999;
-    const tirB = calcTIR(b.coste, b.valor, añosB) || -999;
+    const tirA = calcTIR(a.coste, a.valor, añosBase) || -999;
+    const tirB = calcTIR(b.coste, b.valor, añosBase) || -999;
     return tirB - tirA;
   });
 
-  container.innerHTML = `<div style="padding:8px 16px;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 70px 80px 80px;gap:4px">
-    <span>Fondo</span><span style="text-align:right">Coste</span><span style="text-align:right">Valor</span><span style="text-align:right">Rent. total</span><span style="text-align:right">TIR anual</span>
-  </div>` + fondosOrdenados.map((f, i) => {
-    const años = Math.max(0.5, (hoy - getFechaInicio(f)) / (1000*60*60*24*365.25));
-    const tir = calcTIR(f.coste, f.valor, años);
+  container.innerHTML = fondosOrdenados.map((f, i) => {
+    const tir = calcTIR(f.coste, f.valor, añosBase);
     const pnlTotal = f.coste > 0 ? (f.valor/f.coste - 1)*100 : 0;
     const tirColor = !tir ? 'var(--muted)' : tir >= 10 ? 'var(--green)' : tir >= 5 ? 'var(--accent)' : tir >= 0 ? 'var(--text)' : 'var(--red)';
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-    return `<div style="padding:9px 16px;border-bottom:1px solid var(--surface2);display:grid;grid-template-columns:1fr 70px 70px 80px 80px;align-items:center;gap:4px">
+    return `<div style="padding:9px 16px;border-bottom:1px solid var(--surface2);display:grid;grid-template-columns:1fr 70px 70px 70px;align-items:center;gap:4px">
       <div>
         <div style="font-size:12px;font-weight:500">${medal} ${f.nombre.length > 35 ? f.nombre.substring(0,35)+'…' : f.nombre}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">${f.gestora} · ${años.toFixed(1)} años</div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">${f.gestora} · ${pnlTotal>=0?'+':''}${pnlTotal.toFixed(1)}% total</div>
       </div>
       <div style="text-align:right;font-family:var(--font-mono);font-size:11px">${fmt(f.coste)}</div>
       <div style="text-align:right;font-family:var(--font-mono);font-size:11px">${fmt(f.valor)}</div>
-      <div style="text-align:right;font-family:var(--font-mono);font-size:11px;color:${pnlTotal>=0?'var(--green)':'var(--red)'}">${pnlTotal>=0?'+':''}${pnlTotal.toFixed(1)}%</div>
       <div style="text-align:right">
         <span class="tir-badge" style="background:${tirColor}20;color:${tirColor}">
           ${tir !== null ? (tir>=0?'+':'')+tir.toFixed(1)+'%' : '—'}
@@ -9840,31 +9773,20 @@ function renderTIR() {
 function exportCarteraXLS() {
   if (!funds || funds.length === 0) return alert('No hay fondos para exportar');
   const total = funds.reduce((a,b)=>a+b.valor,0);
-  const hoy = new Date();
-  // Build CSV content
-  const headers = ['Fondo','Gestora','Ticker','Coste (€)','Valor actual (€)','Plusvalía (€)','Rentabilidad total (%)','Peso cartera (%)'];
+  const headers = ['Fondo','Gestora','Ticker','Coste','Valor actual','Plusvalia','Rent. total %','Peso %'];
   const rows = funds.map(f => {
     const diff = f.valor - f.coste;
     const pct = f.coste ? (diff/f.coste*100).toFixed(2) : '0';
-    const weight = total ? (f.valor/total*100).toFixed(2) : '0';
-    return [f.nombre, f.gestora, f.ticker, f.coste.toFixed(2), f.valor.toFixed(2), diff.toFixed(2), pct, weight];
+    const w = total ? (f.valor/total*100).toFixed(2) : '0';
+    return [f.nombre, f.gestora, f.ticker, f.coste.toFixed(2), f.valor.toFixed(2), diff.toFixed(2), pct, w];
   });
-  const totalCoste = funds.reduce((a,b)=>a+b.coste,0);
-  const totalPnl = total - totalCoste;
-  const totalPct = totalCoste ? (totalPnl/totalCoste*100).toFixed(2) : '0';
-  rows.push(['TOTAL', '', '', totalCoste.toFixed(2), total.toFixed(2), totalPnl.toFixed(2), totalPct, '100.00']);
-
-  const csvContent = [headers, ...rows]
-    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'))
-    .join('\n');
-
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+  const totalC = funds.reduce((a,b)=>a+b.coste,0);
+  rows.push(['TOTAL','','',totalC.toFixed(2),total.toFixed(2),(total-totalC).toFixed(2),totalC?(((total-totalC)/totalC)*100).toFixed(2):'0','100']);
+  const csv = [headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n');
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'cartera_fondos_' + hoy.toISOString().substring(0,10) + '.csv';
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'cartera_' + new Date().toISOString().substring(0,10) + '.csv';
   a.click();
-  URL.revokeObjectURL(url);
 }
 
 function renderGestoras() {
@@ -10647,7 +10569,7 @@ function renderGastosExtra() {
 
   const delYear = gastosExtra.filter(e => parseInt(e.fecha?.substring(0,4)) === yearFiltro);
   const previsto = delYear.reduce((a,e) => a + e.importe, 0);
-  const ejecutado = delYear.reduce((a,e) => a + (e.pagadoParcial || (e.estado === 'pagado' ? (e.importeReal || e.importe) : 0)), 0);
+  const ejecutado = delYear.filter(e => e.estado === 'pagado').reduce((a,e) => a + (e.importeReal || e.importe), 0);
   const pendiente = delYear.filter(e => e.estado === 'pendiente').reduce((a,e) => a + e.importe, 0);
   const pctEj = previsto > 0 ? Math.round(ejecutado/previsto*100) : 0;
   const mesesRest = Math.max(1, 12 - new Date().getMonth());
@@ -10767,36 +10689,29 @@ function renderGastosExtra() {
         '<div style="font-size:12px">' + new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES') + '</div>' +
         '<div>' +
         '<div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
-        (e.pagadoParcial > 0 ? '<div style="font-size:10px;color:var(--green)">Pagado: ' + fmt(e.pagadoParcial) + ' / Pendiente: ' + fmt(Math.max(0, e.importe - e.pagadoParcial)) + '</div>' : '') +
-        '<div style="background:var(--surface2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="height:4px;background:var(--green);width:' + (e.importe > 0 ? Math.min(100,Math.round((e.pagadoParcial||0)/e.importe*100)) : 0) + '%;border-radius:3px"></div></div>' +
+        (e.pagadoParcial > 0 ? '<div style="font-size:10px;color:var(--green)">Pagado: ' + fmt(e.pagadoParcial) + ' · Pendiente: ' + fmt(Math.max(0,e.importe-e.pagadoParcial)) + '</div>' : '') +
+        '<div style="background:var(--surface2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="height:4px;background:var(--green);width:' + (e.importe>0?Math.min(100,Math.round((e.pagadoParcial||0)/e.importe*100)):0) + '%;border-radius:3px"></div></div>' +
         '</div>' +
         '<div><span style="padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;background:' + st.bg + ';color:' + st.color + '">' + st.txt + '</span></div>' +
         '<div style="display:flex;gap:4px">' +
-        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Registrar pago parcial" onclick="abrirPagoParcial(' + e.id + ')">💳</button>' +
+        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Registrar pago" onclick="abrirPagoParcial(' + e.id + ')">💳</button>' +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openModalExtra(' + e.id + ')">✏️</button>' +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteExtra(' + e.id + ')">🗑</button>' +
         '</div></div>' + cuotasHtml + '</div>';
     }).join('') + '</div>';
 }
 
-// ===== PAGOS PARCIALES EXTRAS =====
 function abrirPagoParcial(id) {
   const e = gastosExtra.find(x => x.id === id);
   if (!e) return;
   const pagado = e.pagadoParcial || 0;
   const pendiente = Math.max(0, e.importe - pagado);
-  const importe = prompt(
-    `💳 Registrar pago para: ${e.desc}\n\nTotal: ${fmt(e.importe)}\nYa pagado: ${fmt(pagado)}\nPendiente: ${fmt(pendiente)}\n\nImporte a pagar ahora:`,
-    pendiente
-  );
-  if (importe === null) return;
-  const val = parseFloat(String(importe).replace(',','.'));
-  if (isNaN(val) || val <= 0) return alert('Importe no válido');
-  e.pagadoParcial = (e.pagadoParcial || 0) + val;
-  if (e.pagadoParcial >= e.importe) {
-    e.pagadoParcial = e.importe;
-    e.estado = 'pagado';
-  }
+  const val = prompt('Registrar pago para: ' + e.desc + '\nTotal: ' + fmt(e.importe) + '\nYa pagado: ' + fmt(pagado) + '\nPendiente: ' + fmt(pendiente) + '\n\nImporte a pagar ahora:', pendiente);
+  if (val === null) return;
+  const num = parseFloat(String(val).replace(',','.'));
+  if (isNaN(num) || num <= 0) return alert('Importe no válido');
+  e.pagadoParcial = pagado + num;
+  if (e.pagadoParcial >= e.importe) { e.pagadoParcial = e.importe; e.estado = 'pagado'; }
   saveAll();
   renderGastosExtra();
 }
@@ -11121,13 +11036,11 @@ function renderEfectivo() {
   if (!el) return;
 
   const fmt = n => n.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '\u00a0€';
-  // Gastos en efectivo desde transacciones
   const txEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
-  // Ingresos en efectivo desde transacciones (automático)
-  const txIngresosEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
+  const txIngEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
 
   const mesesSet = new Set([
-    ...txIngresosEfectivo.map(t => t.fecha.substring(0, 7)),
+    ...txIngEfectivo.map(t => t.fecha.substring(0, 7)),
     ...txEfectivo.map(t => t.fecha.substring(0, 7)),
     ...gastosEfectivoLocal.map(g => g.mes)
   ]);
@@ -11148,7 +11061,7 @@ function renderEfectivo() {
   let carry = 0;
   for (const mes of mesesAsc) {
     saldoInicialMes[mes] = carry;
-    const ingTx = txIngresosEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
+    const ingTx = txIngEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
     const gastoTx = txEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
     const gastoLocal = gastosEfectivoLocal.filter(g => g.mes === mes).reduce((s, g) => s + g.importe, 0);
     carry = Math.max(0, saldoInicialMes[mes] + ingTx - gastoTx - gastoLocal);
@@ -11159,7 +11072,7 @@ function renderEfectivo() {
     const mesLabel = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     const mesLabelCap = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1);
 
-    const ingMes = txIngresosEfectivo.filter(t => t.fecha.startsWith(mes));
+    const ingMes = txIngEfectivo.filter(t => t.fecha.startsWith(mes));
     const totalIngresado = ingMes.reduce((s, t) => s + t.importe, 0);
     const txMes = txEfectivo.filter(t => t.fecha.startsWith(mes));
     const gastosLocalesMes = gastosEfectivoLocal.filter(g => g.mes === mes);
@@ -11254,6 +11167,15 @@ function renderEfectivo() {
   }).join('');
 }
 
+
+
+  const mesActual = new Date().toISOString().substring(0,7);
+  const txEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo');
+  const txEfectivoMes = txEfectivo.filter(t => t.fecha.startsWith(mesActual));
+
+  const gastadoMes = txEfectivoMes.filter(t => t.tipo === 'Gasto').reduce((s,t) => s + t.importe, 0);
+  const gastadoTotal = txEfectivo.filter(t => t.tipo === 'Gasto').reduce((s,t) => s + t.importe, 0);
+
 function renderCierre() {
   populateCierreMesFilter();
   const sel = document.getElementById('cierreMesFilter');
@@ -11269,11 +11191,10 @@ function renderCierre() {
   setEl('cierre-gastos', fmt(gastos), 'var(--red)');
   setEl('cierre-ahorro', fmt(ahorro), ahorro>=0?'var(--green)':'var(--red)');
   setEl('cierre-ahorro-pct', `Tasa de ahorro: ${ahorroP}%`);
-  // Presupuesto del mes: solo categorías que tienen gastos en ese mes
   const catsMes = {};
   txMes.filter(t=>t.tipo==='Gasto').forEach(t => { catsMes[t.cat] = (catsMes[t.cat]||0) + t.importe; });
-  const totalBudgetMes = Object.keys(catsMes).reduce((a,cat) => a + (budgets[cat]||0), 0);
-  const diffBudget  = totalBudgetMes - gastos;
+  const totalBudget = Object.keys(catsMes).reduce((a,cat) => a + (budgets[cat]||0), 0);
+  const diffBudget  = totalBudget - gastos;
   setEl('cierre-vs-budget', fmt(Math.abs(diffBudget)), diffBudget>=0?'var(--green)':'var(--red)');
   setEl('cierre-vs-budget-sub', diffBudget>=0 ? `${fmt(diffBudget)} por debajo del presupuesto` : `${fmt(-diffBudget)} por encima del presupuesto`);
 
@@ -12200,6 +12121,137 @@ function _abrirVentanaPDF(mesActual, meses) {
   }
 }
 
+
+function renderAgendaAlertas() {
+  const hoy  = new Date(); hoy.setHours(0,0,0,0);
+  const en7  = new Date(hoy); en7.setDate(en7.getDate() + 7);
+  const proximos = agendaEventos.filter(e => {
+    if (e.estado === 'hecho' || e.estado === 'cancelado') return false;
+    const d = new Date(e.fecha + 'T00:00:00');
+    return d >= hoy && d <= en7;
+  }).sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  // Alertas de cuotas de ahorro/reposición del mes actual
+  const mesActualKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+  const alertasAhorro = (gastosExtra || []).filter(e => {
+    if (!e.fechaInicio || !e.cuotaMensual) return false;
+    const cuotas = _generarCuotas(e);
+    if (!cuotas) return false;
+    const cuotaMes = cuotas.find(c => c.mesKey === mesActualKey);
+    if (!cuotaMes) return false;
+    return (e.progreso || 0) < cuotas.filter(c => c.mesKey <= mesActualKey).reduce((a,c) => a + c.cantidad, 0);
+  });
+
+  const htmlAhorro = alertasAhorro.map(e => {
+    const cuotas = _generarCuotas(e);
+    const cuotaMes = cuotas.find(c => c.mesKey === mesActualKey);
+    return `<div style="background:rgba(61,90,138,0.06);border:1px solid rgba(61,90,138,0.25);border-radius:8px;padding:12px 18px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🐷</span>
+        <div>
+          <div style="font-size:13px;font-weight:500">${e.desc} · <span style="color:var(--blue)">${fmt(cuotaMes.cantidad)}</span></div>
+          <div style="font-size:11px;color:var(--muted)">Cuota de ahorro pendiente este mes</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;font-weight:600;color:var(--blue)">Este mes</span>
+        <button onclick="marcarCuotaExtra(${e.id},${cuotaMes.cantidad})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px">✓ Ahorrado</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html = proximos.length === 0 ? '' : proximos.map(e => {
+    const t    = AGENDA_TIPO[e.tipo] || AGENDA_TIPO.nota;
+    const d    = new Date(e.fecha + 'T00:00:00');
+    const dias = Math.round((d - hoy) / (1000*60*60*24));
+    const cuando = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : `En ${dias} días`;
+    return `<div style="background:${t.bg};border:1px solid ${t.color}33;border-radius:8px;padding:12px 18px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">${t.emoji}</span>
+        <div>
+          <div style="font-size:13px;font-weight:500">${e.desc}${e.importe ? ` · <span style="color:${t.color}">${fmt(e.importe)}</span>` : ''}</div>
+          <div style="font-size:11px;color:var(--muted)">${e.notas || t.label}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;font-weight:600;color:${t.color}">${cuando}</span>
+        <button onclick="toggleEstadoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px">✓ Hecho</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Rellenar en pestaña agenda
+  const elAgenda = document.getElementById('agenda-alertas');
+  if (elAgenda) elAgenda.innerHTML = htmlAhorro + html;
+  // Rellenar en portada resumen
+  const elResumen = document.getElementById('agenda-alertas-resumen');
+  if (elResumen) elResumen.innerHTML = htmlAhorro + html;
+}
+
+function renderAgenda() {
+  const tituloEl   = document.getElementById('agenda-mes-titulo');
+  const calEl      = document.getElementById('agenda-calendario');
+  const listaEl    = document.getElementById('agenda-lista');
+  const tipoFilter = document.getElementById('agenda-tipo-filter')?.value || 'all';
+  if (!calEl) return;
+
+  const [y, m] = agendaMesActual.split('-').map(Number);
+  if (tituloEl) tituloEl.textContent = new Date(y, m-1, 1).toLocaleDateString('es-ES', { month:'long', year:'numeric' }).replace(/^\w/, c => c.toUpperCase());
+
+  const hoy        = new Date(); hoy.setHours(0,0,0,0);
+  const primerDia  = new Date(y, m-1, 1).getDay(); // 0=dom
+  const diasMes    = new Date(y, m, 0).getDate();
+  const offset     = (primerDia + 6) % 7; // lunes=0
+  const eventosMes = agendaEventos.filter(e => e.fecha.startsWith(agendaMesActual));
+
+  // Calendrio
+  const dias = ['L','M','X','J','V','S','D'];
+  let cal = `<div class="cal-grid">`;
+  dias.forEach(d => cal += `<div class="cal-header">${d}</div>`);
+  for (let i = 0; i < offset; i++) cal += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= diasMes; d++) {
+    const fechaStr = `${agendaMesActual}-${String(d).padStart(2,'0')}`;
+    const esHoy    = new Date(fechaStr+'T00:00:00').getTime() === hoy.getTime();
+    const evsDia   = eventosMes.filter(e => e.fecha === fechaStr);
+    cal += `<div class="cal-day${esHoy?' hoy':''}">
+      <div class="cal-day-num">${d}</div>
+      ${evsDia.map(e => `<div class="cal-evento cal-evento-${e.tipo}${e.estado==='hecho'?' cal-evento-hecho':''}" onclick="openModalAgenda(${e.id})" title="${e.desc}">
+        ${AGENDA_TIPO[e.tipo]?.emoji || '📝'} ${e.desc}
+      </div>`).join('')}
+    </div>`;
+  }
+  cal += `</div>`;
+  calEl.innerHTML = cal;
+
+  // Lista del mes
+  let eventos = eventosMes;
+  if (tipoFilter !== 'all') eventos = eventos.filter(e => e.tipo === tipoFilter);
+  eventos = [...eventos].sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  if (!listaEl) return;
+  if (eventos.length === 0) {
+    listaEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-icon">🗓</div>Sin eventos este mes</div>';
+    return;
+  }
+  listaEl.innerHTML = eventos.map(e => {
+    const t     = AGENDA_TIPO[e.tipo] || AGENDA_TIPO.nota;
+    const fecha = new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+    const hecho = e.estado === 'hecho';
+    return `<div class="agenda-row" style="${hecho?'opacity:0.5':''}">
+      <div class="agenda-tipo-badge" style="background:${t.bg}">${t.emoji}</div>
+      <div>
+        <div style="font-size:13px;font-weight:500${hecho?';text-decoration:line-through':''}">${e.desc}</div>
+        <div style="font-size:11px;color:var(--muted)">${fecha} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onclick="toggleEstadoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" title="${hecho?'Marcar pendiente':'Marcar hecho'}">${hecho?'↩':'✓'}</button>
+        <button onclick="openModalAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px">✏️</button>
+        <button onclick="deleteEventoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:var(--red);border-color:var(--red)">✕</button>
+      </div>
+      <span style="font-size:11px;padding:3px 8px;border-radius:4px;background:${hecho?'var(--surface2)':t.bg};color:${hecho?'var(--muted)':t.color};white-space:nowrap">${hecho?'Hecho':e.estado==='cancelado'?'Cancelado':'Pendiente'}</span>
+    </div>`;
+  }).join('');
+}
 
 </script>
 
