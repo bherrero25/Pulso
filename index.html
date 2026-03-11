@@ -3059,17 +3059,17 @@
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Fondos de Inversión</div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importing CSV</button>
-            <input type="file" id="investingFile" accept=".csv" style="display:none" onchange="importInvesting(this)">
-            <button class="btn btn-gold" style="font-size:12px;padding:5px 12px;" onclick="openModal(&#39;modalFund&#39;)">+ Fondo</button>
-          </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Fondos de Inversión</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="exportCarteraXLS()">📥 Exportar XLS</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importar CSV</button>
+          <input type="file" id="investingFile" accept=".csv" style="display:none" onchange="importInvesting(this)">
+          <button class="btn btn-gold" style="font-size:12px;padding:5px 12px;" onclick="openModal(&#39;modalFund&#39;)">+ Fondo</button>
         </div>
-        <div class="card-body" id="fundList">
+      </div>
+      <div class="card-body" id="fundList">
         <div class="fund-row">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
@@ -3374,16 +3374,8 @@
           <div style="font-size:11px;color:var(--muted);margin-top:4px">Coste: 1000&nbsp;€ · Peso: 2.0%</div>
         </div>
       </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Distribución Cartera</div></div>
-        <div class="card-body">
-          <div class="chart-wrap" style="height:200px"><canvas id="chartFunds" style="box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas></div>
-          <div id="legendFunds" style="margin-top:12px;"><div class="legend-item"><div class="legend-dot" style="background:#8b6914"></div><span style="font-size:12px">Pictet - Robotics P EUR</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a5c"></div><span style="font-size:12px">Vanguard Global Stock Index Inv EUR</span><span class="legend-pct">6%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d5a8a"></div><span style="font-size:12px">Vanguard Global Small-Cap Index Fund EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#9b3535"></div><span style="font-size:12px">Magallanes Value Investors UCITS European Equity R</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a5c8b"></div><span style="font-size:12px">T. Rowe Price Funds SICAV - US Smaller Companies E</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#b8901f"></div><span style="font-size:12px">Bellevue Funds Lux BB Adamant Medtech B EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#2d6b5e"></div><span style="font-size:12px">MFS Meridian Funds - Prudent Wealth Fund A1 EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a3d3d"></div><span style="font-size:12px">Flossbach von Storch - Multiple Opportunities II E</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c6b8b"></div><span style="font-size:12px">Pictet-Water P EUR</span><span class="legend-pct">3%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b7a3d"></div><span style="font-size:12px">Fundsmith Equity Fund Feeder T EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#4a7a6b"></div><span style="font-size:12px">DPAM INVEST B - Equities NewGems Sustainable B Cap</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#6b3d7a"></div><span style="font-size:12px">Robeco Global Consumer Trends Equities D €</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b5c3d"></div><span style="font-size:12px">Fidelity Funds - Global Technology Fund A-Acc-EUR</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a4a"></div><span style="font-size:12px">Seilern Stryx World Growth EUR U</span><span class="legend-pct">9%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a6b3d"></div><span style="font-size:12px">Amundi Index Solutions   Amundi Index MSCI World A</span><span class="legend-pct">13%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c3d7a"></div><span style="font-size:12px">Amundi Index Solutions - Amundi Index MSCI Emergin</span><span class="legend-pct">2%</span></div></div>
-        </div>
-      </div>
-    </div>
 
+    
     <!-- HISTÓRICO CARTERA -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
@@ -3570,29 +3562,35 @@
     </div>
 
     <!-- Flujo principal -->
-    <div class="teso-flow">
+    <div class="teso-flow" style="grid-template-columns:repeat(5,1fr)">
       <div class="teso-block">
         <div class="teso-label">Saldo Inicial</div>
-        <div class="teso-value" id="teso-inicial">35.535&nbsp;€</div>
-        <div class="teso-sub">Inicio del período</div>
+        <div class="teso-value" id="teso-inicial">—</div>
+        <div class="teso-sub">Cuenta corriente</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">+ Ingresos</div>
-        <div class="teso-value" style="color:var(--green)" id="teso-ingresos">12.488&nbsp;€</div>
-        <div class="teso-sub" id="teso-ing-count">8 entradas</div>
+        <div class="teso-label">+ Ingresos cuenta</div>
+        <div class="teso-value" style="color:var(--green)" id="teso-ingresos">—</div>
+        <div class="teso-sub" id="teso-ing-count">en cuenta</div>
+        <div class="teso-arrow">→</div>
+      </div>
+      <div class="teso-block" id="teso-efectivo-row">
+        <div class="teso-label">+ Ingresos efectivo</div>
+        <div class="teso-value" style="color:var(--accent)" id="teso-efectivo">—</div>
+        <div class="teso-sub">No va a cuenta</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">− Gastos</div>
-        <div class="teso-value" style="color:var(--red)" id="teso-gastos">9410&nbsp;€</div>
-        <div class="teso-sub" id="teso-gas-count">112 salidas</div>
+        <div class="teso-label">− Gastos cuenta</div>
+        <div class="teso-value" style="color:var(--red)" id="teso-gastos">—</div>
+        <div class="teso-sub" id="teso-gas-count">en cuenta</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">Saldo Final</div>
-        <div class="teso-value" id="teso-final" style="color: var(--green);">38.613&nbsp;€</div>
-        <div class="teso-sub">Saldo inicial editable ↓</div>
+        <div class="teso-label">Saldo Final cuenta</div>
+        <div class="teso-value" id="teso-final" style="color:var(--green)">—</div>
+        <div class="teso-sub">Sin efectivo</div>
       </div>
     </div>
 
@@ -8278,51 +8276,65 @@ function renderFunds() {
   if (funds.length === 0) {
     list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Añade tus fondos de inversión</div>';
   } else {
-    list.innerHTML = funds.map((f,i) => {
+    // Cabecera tabla
+    const headerHtml = `<div style="display:grid;grid-template-columns:2fr 90px 90px 90px 90px 90px 60px;gap:4px;padding:8px 16px;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border)">
+      <span>Fondo</span>
+      <span style="text-align:right">Coste</span>
+      <span style="text-align:right">Valor actual</span>
+      <span style="text-align:right">+/− €</span>
+      <span style="text-align:right">Rent. total</span>
+      <span style="text-align:right">Rent. año</span>
+      <span style="text-align:right"></span>
+    </div>`;
+
+    const hoy = new Date();
+    const inicioAnio = new Date(hoy.getFullYear(), 0, 1);
+
+    const rowsHtml = funds.map((f,i) => {
       const diff = f.valor - f.coste;
-      const pct = f.coste ? (diff/f.coste*100).toFixed(1) : 0;
+      const pctTotal = f.coste ? (diff/f.coste*100) : 0;
       const weight = total ? (f.valor/total*100).toFixed(1) : 0;
-      return `
-        <div class="fund-row">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div class="fund-name">${f.nombre}</div>
-              <div class="fund-ticker">${f.ticker} · ${f.gestora}</div>
-            </div>
-            <div style="display:flex;gap:4px;align-items:center">
-              <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px" title="Actualizar valor">✏️</button>
-              <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px" title="Eliminar">✕</button>
-            </div>
-          </div>
-          <div class="fund-meta">
-            <span style="font-family:var(--font-mono);font-size:13px">${fmt(f.valor)}</span>
-            <div class="progress-bar"><div class="progress-fill" style="width:${weight}%"></div></div>
-            <span class="${diff>=0?'amount-pos':'amount-neg'}" style="font-size:12px">${diff>=0?'+':''}${pct}%</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Coste: ${fmt(f.coste)} · Peso: ${weight}%</div>
+
+      // Rentabilidad del año: buscar en histórico el valor más cercano a 1 enero
+      let rentAnio = null;
+      if (historicoCartera && historicoCartera.length > 0) {
+        const snapsAnio = historicoCartera
+          .filter(s => s.fecha >= hoy.getFullYear() + '-01-01' && s.fecha <= hoy.getFullYear() + '-01-15')
+          .sort((a,b) => a.fecha.localeCompare(b.fecha));
+        if (snapsAnio.length > 0) {
+          const fondoSnap = snapsAnio[snapsAnio.length-1].fondos?.find(x => x.ticker === f.ticker);
+          if (fondoSnap && fondoSnap.valor > 0) {
+            rentAnio = (f.valor - fondoSnap.valor) / fondoSnap.valor * 100;
+          }
+        }
+      }
+
+      // Semáforo basado en rentabilidad total
+      const semaforo = pctTotal >= 20 ? '🟢' : pctTotal >= 5 ? '🟡' : pctTotal >= 0 ? '🟠' : '🔴';
+      const colorTotal = pctTotal >= 0 ? 'var(--green)' : 'var(--red)';
+      const colorAnio = rentAnio === null ? 'var(--muted)' : rentAnio >= 0 ? 'var(--green)' : 'var(--red)';
+
+      return `<div style="display:grid;grid-template-columns:2fr 90px 90px 90px 90px 90px 60px;gap:4px;padding:11px 16px;border-bottom:1px solid var(--surface2);align-items:center">
+        <div>
+          <div style="font-size:12px;font-weight:500">${semaforo} ${f.nombre.length > 32 ? f.nombre.substring(0,32)+'…' : f.nombre}</div>
+          <div style="font-size:10px;color:var(--muted)">${f.gestora} · ${weight}% cartera</div>
         </div>
-      `;
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:var(--muted)">${fmt(f.coste)}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:600">${fmt(f.valor)}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorTotal}">${diff>=0?'+':''}${fmt(Math.abs(diff))}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:600;color:${colorTotal}">${diff>=0?'+':''}${pctTotal.toFixed(1)}%</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorAnio}">${rentAnio !== null ? (rentAnio>=0?'+':'')+rentAnio.toFixed(1)+'%' : '—'}</div>
+        <div style="display:flex;gap:2px;justify-content:flex-end">
+          <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Actualizar valor">✏️</button>
+          <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Eliminar">✕</button>
+        </div>
+      </div>`;
     }).join('');
+
+    list.innerHTML = headerHtml + rowsHtml;
   }
 
-  // Donut funds
-  if (chartFunds) chartFunds.destroy();
-  if (funds.length > 0) {
-    const ctx = document.getElementById('chartFunds').getContext('2d');
-    chartFunds = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: funds.map(f=>f.nombre),
-        datasets: [{ data: funds.map(f=>f.valor), backgroundColor: COLORS.slice(0,funds.length), borderWidth:0, hoverOffset:8 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{legend:{display:false}} }
-    });
-    const legF = document.getElementById('legendFunds');
-    legF.innerHTML = funds.map((f,i) => {
-      const w = total ? Math.round(f.valor/total*100) : 0;
-      return `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i]}"></div><span style="font-size:12px">${f.nombre}</span><span class="legend-pct">${w}%</span></div>`;
-    }).join('');
-  }
+  // Distribución cartera eliminada - ahora tabla expandida
 }
 
 // ===== PATRIMONIO =====
@@ -8339,20 +8351,46 @@ function renderPatrimonio() {
   if (activos.length === 0) {
     listA.innerHTML = '<div class="empty-state"><div class="empty-icon">🏦</div>Añade tus activos</div>';
   } else {
-    listA.innerHTML = activos.map(a => `
+    // Calcular saldo efectivo disponible desde transacciones
+    const txIng = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
+    const txGas = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
+    const saldoEfectivo = Math.max(0, txIng - txGas);
+
+    // Calcular saldo cuenta corriente (mes más reciente)
+    const meses = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
+    const mesMasReciente = meses.length ? meses[meses.length-1] : null;
+    let saldoCuenta = 0;
+    if (mesMasReciente) {
+      const siMes = parseFloat(saldosIniciales[mesMasReciente] || 0);
+      const txMes = transactions.filter(t => t.fecha.startsWith(mesMasReciente));
+      const ingCuenta = txMes.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+      const gasCuenta = txMes.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+      saldoCuenta = siMes + ingCuenta - gasCuenta;
+    }
+
+    listA.innerHTML = activos.map(a => {
+      // Para Cuenta bancaria: mostrar saldo calculado de tesorería
+      const esCuenta = a.tipo === 'Cuenta bancaria';
+      const esInversion = a.tipo === 'Inversiones';
+      const valorMostrar = a.valor;
+      const subTexto = esCuenta
+        ? `<div style="font-size:10px;color:var(--muted)">Cuenta corriente: <span style="color:var(--green);font-family:var(--font-mono)">${fmt(saldoCuenta)}</span> · Efectivo: <span style="color:var(--accent);font-family:var(--font-mono)">${fmt(saldoEfectivo)}</span></div>`
+        : '';
+      return `
       <div class="fund-row" style="padding:10px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div style="flex:1;min-width:0">
             <div class="fund-name" id="activo-nombre-${a.id}" ondblclick="editActivoNombre(${a.id})" title="Doble clic para editar nombre" style="cursor:pointer">${a.nombre}</div>
             <div class="fund-ticker">${a.tipo}</div>
+            ${subTexto}
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" title="Clic para editar valor" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${fmt(a.valor)}</span>
+            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" title="Clic para editar valor" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${fmt(valorMostrar)}</span>
             <button onclick="deleteActivo(${a.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">✕</button>
           </div>
         </div>
-      </div>
-    `).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
+      </div>`;
+    }).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
   }
 
   const listP = document.getElementById('pasivosList');
@@ -8646,24 +8684,42 @@ function parseFecha(str) {
 function renderTesoreria() {
   const filter = document.getElementById('tesoMonthFilter') ? document.getElementById('tesoMonthFilter').value : 'all';
   const txs = getFilteredTx(filter);
-  const ingresos = txs.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-  const gastos = txs.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
 
-  // Saldo inicial: for a specific month use stored, for 'all' sum all saldos
+  // Separar ingresos: cuenta (no efectivo) vs efectivo
+  const ingresosEfectivo = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
+  const ingresosCuenta   = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+
+  // Separar gastos: cuenta (no efectivo) vs efectivo
+  const gastosEfectivo = txs.filter(t=>t.tipo==='Gasto' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
+  const gastosCuenta   = txs.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+
+  // Saldo inicial cuenta corriente
   let saldoInicial = 0;
   if (filter !== 'all') {
     saldoInicial = parseFloat(saldosIniciales[filter] || 0);
   } else {
-    // use oldest month's saldo inicial
     const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
     if (months.length) saldoInicial = parseFloat(saldosIniciales[months[0]] || 0);
   }
-  const saldoFinal = saldoInicial + ingresos - gastos;
 
+  // Saldo final cuenta corriente = saldo inicial + ingresos cuenta - gastos cuenta
+  const saldoFinal = saldoInicial + ingresosCuenta - gastosCuenta;
+
+  // Actualizar los 4 bloques principales + efectivo
   document.getElementById('teso-inicial').textContent = fmt(saldoInicial);
-  document.getElementById('teso-ingresos').textContent = fmt(ingresos);
-  document.getElementById('teso-gastos').textContent = fmt(gastos);
-  // Incluir cuotas de ahorro/reposición del mes como salida prevista
+  document.getElementById('teso-ingresos').textContent = fmt(ingresosCuenta);
+  document.getElementById('teso-gastos').textContent = fmt(gastosCuenta);
+
+  // Bloque efectivo
+  const tesoEfEl = document.getElementById('teso-efectivo');
+  if (tesoEfEl) tesoEfEl.textContent = fmt(ingresosEfectivo);
+  const tesoEfRow = document.getElementById('teso-efectivo-row');
+  if (tesoEfRow) tesoEfRow.style.display = '';
+
+  document.getElementById('teso-ing-count').textContent = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').length + ' en cuenta';
+  document.getElementById('teso-gas-count').textContent = txs.filter(t=>t.tipo==='Gasto' && t.cuenta!=='Efectivo').length + ' en cuenta';
+
+  // Cuotas de ahorro
   let cuotasAhorroMes = 0;
   if (filter !== 'all') {
     (gastosExtra || []).forEach(e => {
@@ -8677,8 +8733,6 @@ function renderTesoreria() {
   const saldoFinalConAhorro = saldoFinal - cuotasAhorroMes;
   document.getElementById('teso-final').textContent = fmt(saldoFinalConAhorro);
   document.getElementById('teso-final').style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('teso-ing-count').textContent = txs.filter(t=>t.tipo==='Ingreso').length + ' entradas';
-  document.getElementById('teso-gas-count').textContent = txs.filter(t=>t.tipo==='Gasto').length + ' salidas';
 
   // Saldo inicial table por mes
   const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
@@ -8710,12 +8764,8 @@ function renderTesoreria() {
     `;
   }
 
-  // Budget vs Real — siempre usar el mes seleccionado (o el más reciente si es "todos")
-  let budgetFilter = filter;
-  if (!budgetFilter || budgetFilter === 'all') {
-    const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
-    budgetFilter = months.length ? months[months.length - 1] : 'all';
-  }
+  // Budget vs Real — usar exactamente el mes seleccionado en el filtro
+  const budgetFilter = filter;
   const budgetTxs = getFilteredTx(budgetFilter);
   const catData = {};
   budgetTxs.filter(t=>t.tipo==='Gasto').forEach(t => { catData[t.cat] = (catData[t.cat]||0) + t.importe; });
@@ -9734,27 +9784,50 @@ function renderTIR() {
     return;
   }
 
-  // Estimar años de inversión: si no hay histórico, asumir media de 3 años (ajustable)
-  const añosBase = 3;
+  // Calcular años desde inicio real de inversión
+  // Fecha de inicio de la cartera: abril 2020 (primera compra)
+  const fechaInicioCartera = new Date('2020-04-01');
+  const hoy = new Date();
+  const añosTotales = (hoy - fechaInicioCartera) / (1000 * 60 * 60 * 24 * 365.25);
+
+  // Para cada fondo, intentar detectar fecha primera aparición en histórico
+  // Si no hay histórico, usar la fecha de inicio de cartera
+  const getFechaInicio = (f) => {
+    if (historicoCartera && historicoCartera.length > 0) {
+      const primerSnap = [...historicoCartera]
+        .sort((a,b) => a.fecha.localeCompare(b.fecha))
+        .find(s => s.fondos?.some(x => x.ticker === f.ticker));
+      if (primerSnap) {
+        return new Date(primerSnap.fecha);
+      }
+    }
+    return fechaInicioCartera;
+  };
 
   const fondosOrdenados = [...funds].sort((a,b) => {
-    const tirA = calcTIR(a.coste, a.valor, añosBase) || -999;
-    const tirB = calcTIR(b.coste, b.valor, añosBase) || -999;
+    const añosA = Math.max(0.5, (hoy - getFechaInicio(a)) / (1000*60*60*24*365.25));
+    const añosB = Math.max(0.5, (hoy - getFechaInicio(b)) / (1000*60*60*24*365.25));
+    const tirA = calcTIR(a.coste, a.valor, añosA) || -999;
+    const tirB = calcTIR(b.coste, b.valor, añosB) || -999;
     return tirB - tirA;
   });
 
-  container.innerHTML = fondosOrdenados.map((f, i) => {
-    const tir = calcTIR(f.coste, f.valor, añosBase);
+  container.innerHTML = `<div style="padding:8px 16px;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 70px 80px 80px;gap:4px">
+    <span>Fondo</span><span style="text-align:right">Coste</span><span style="text-align:right">Valor</span><span style="text-align:right">Rent. total</span><span style="text-align:right">TIR anual</span>
+  </div>` + fondosOrdenados.map((f, i) => {
+    const años = Math.max(0.5, (hoy - getFechaInicio(f)) / (1000*60*60*24*365.25));
+    const tir = calcTIR(f.coste, f.valor, años);
     const pnlTotal = f.coste > 0 ? (f.valor/f.coste - 1)*100 : 0;
     const tirColor = !tir ? 'var(--muted)' : tir >= 10 ? 'var(--green)' : tir >= 5 ? 'var(--accent)' : tir >= 0 ? 'var(--text)' : 'var(--red)';
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-    return `<div style="padding:9px 16px;border-bottom:1px solid var(--surface2);display:grid;grid-template-columns:1fr 70px 70px 70px;align-items:center;gap:4px">
+    return `<div style="padding:9px 16px;border-bottom:1px solid var(--surface2);display:grid;grid-template-columns:1fr 70px 70px 80px 80px;align-items:center;gap:4px">
       <div>
         <div style="font-size:12px;font-weight:500">${medal} ${f.nombre.length > 35 ? f.nombre.substring(0,35)+'…' : f.nombre}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">${f.gestora} · ${pnlTotal>=0?'+':''}${pnlTotal.toFixed(1)}% total</div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">${f.gestora} · ${años.toFixed(1)} años</div>
       </div>
       <div style="text-align:right;font-family:var(--font-mono);font-size:11px">${fmt(f.coste)}</div>
       <div style="text-align:right;font-family:var(--font-mono);font-size:11px">${fmt(f.valor)}</div>
+      <div style="text-align:right;font-family:var(--font-mono);font-size:11px;color:${pnlTotal>=0?'var(--green)':'var(--red)'}">${pnlTotal>=0?'+':''}${pnlTotal.toFixed(1)}%</div>
       <div style="text-align:right">
         <span class="tir-badge" style="background:${tirColor}20;color:${tirColor}">
           ${tir !== null ? (tir>=0?'+':'')+tir.toFixed(1)+'%' : '—'}
@@ -9762,6 +9835,36 @@ function renderTIR() {
       </div>
     </div>`;
   }).join('');
+}
+
+function exportCarteraXLS() {
+  if (!funds || funds.length === 0) return alert('No hay fondos para exportar');
+  const total = funds.reduce((a,b)=>a+b.valor,0);
+  const hoy = new Date();
+  // Build CSV content
+  const headers = ['Fondo','Gestora','Ticker','Coste (€)','Valor actual (€)','Plusvalía (€)','Rentabilidad total (%)','Peso cartera (%)'];
+  const rows = funds.map(f => {
+    const diff = f.valor - f.coste;
+    const pct = f.coste ? (diff/f.coste*100).toFixed(2) : '0';
+    const weight = total ? (f.valor/total*100).toFixed(2) : '0';
+    return [f.nombre, f.gestora, f.ticker, f.coste.toFixed(2), f.valor.toFixed(2), diff.toFixed(2), pct, weight];
+  });
+  const totalCoste = funds.reduce((a,b)=>a+b.coste,0);
+  const totalPnl = total - totalCoste;
+  const totalPct = totalCoste ? (totalPnl/totalCoste*100).toFixed(2) : '0';
+  rows.push(['TOTAL', '', '', totalCoste.toFixed(2), total.toFixed(2), totalPnl.toFixed(2), totalPct, '100.00']);
+
+  const csvContent = [headers, ...rows]
+    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'))
+    .join('\n');
+
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cartera_fondos_' + hoy.toISOString().substring(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function renderGestoras() {
@@ -10544,7 +10647,7 @@ function renderGastosExtra() {
 
   const delYear = gastosExtra.filter(e => parseInt(e.fecha?.substring(0,4)) === yearFiltro);
   const previsto = delYear.reduce((a,e) => a + e.importe, 0);
-  const ejecutado = delYear.filter(e => e.estado === 'pagado').reduce((a,e) => a + (e.importeReal || e.importe), 0);
+  const ejecutado = delYear.reduce((a,e) => a + (e.pagadoParcial || (e.estado === 'pagado' ? (e.importeReal || e.importe) : 0)), 0);
   const pendiente = delYear.filter(e => e.estado === 'pendiente').reduce((a,e) => a + e.importe, 0);
   const pctEj = previsto > 0 ? Math.round(ejecutado/previsto*100) : 0;
   const mesesRest = Math.max(1, 12 - new Date().getMonth());
@@ -10662,15 +10765,40 @@ function renderGastosExtra() {
         '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + e.categoria + '</div>' +
         '<div style="font-size:12px">' + new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES') + '</div>' +
-        '<div><div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
-        (e.importeReal && e.importeReal !== e.importe ? '<div style="font-size:10px;color:' + (e.importeReal>e.importe?'var(--red)':'var(--green)') + '">Real: ' + fmt(e.importeReal) + '</div>' : '') +
+        '<div>' +
+        '<div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
+        (e.pagadoParcial > 0 ? '<div style="font-size:10px;color:var(--green)">Pagado: ' + fmt(e.pagadoParcial) + ' / Pendiente: ' + fmt(Math.max(0, e.importe - e.pagadoParcial)) + '</div>' : '') +
+        '<div style="background:var(--surface2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="height:4px;background:var(--green);width:' + (e.importe > 0 ? Math.min(100,Math.round((e.pagadoParcial||0)/e.importe*100)) : 0) + '%;border-radius:3px"></div></div>' +
         '</div>' +
         '<div><span style="padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;background:' + st.bg + ';color:' + st.color + '">' + st.txt + '</span></div>' +
         '<div style="display:flex;gap:4px">' +
+        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Registrar pago parcial" onclick="abrirPagoParcial(' + e.id + ')">💳</button>' +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openModalExtra(' + e.id + ')">✏️</button>' +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteExtra(' + e.id + ')">🗑</button>' +
         '</div></div>' + cuotasHtml + '</div>';
     }).join('') + '</div>';
+}
+
+// ===== PAGOS PARCIALES EXTRAS =====
+function abrirPagoParcial(id) {
+  const e = gastosExtra.find(x => x.id === id);
+  if (!e) return;
+  const pagado = e.pagadoParcial || 0;
+  const pendiente = Math.max(0, e.importe - pagado);
+  const importe = prompt(
+    `💳 Registrar pago para: ${e.desc}\n\nTotal: ${fmt(e.importe)}\nYa pagado: ${fmt(pagado)}\nPendiente: ${fmt(pendiente)}\n\nImporte a pagar ahora:`,
+    pendiente
+  );
+  if (importe === null) return;
+  const val = parseFloat(String(importe).replace(',','.'));
+  if (isNaN(val) || val <= 0) return alert('Importe no válido');
+  e.pagadoParcial = (e.pagadoParcial || 0) + val;
+  if (e.pagadoParcial >= e.importe) {
+    e.pagadoParcial = e.importe;
+    e.estado = 'pagado';
+  }
+  saveAll();
+  renderGastosExtra();
 }
 
 // ===== THEME SYSTEM =====
@@ -10993,10 +11121,13 @@ function renderEfectivo() {
   if (!el) return;
 
   const fmt = n => n.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '\u00a0€';
+  // Gastos en efectivo desde transacciones
   const txEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
+  // Ingresos en efectivo desde transacciones (automático)
+  const txIngresosEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
 
   const mesesSet = new Set([
-    ...retiradaEfectivo.map(r => r.mes),
+    ...txIngresosEfectivo.map(t => t.fecha.substring(0, 7)),
     ...txEfectivo.map(t => t.fecha.substring(0, 7)),
     ...gastosEfectivoLocal.map(g => g.mes)
   ]);
@@ -11017,10 +11148,10 @@ function renderEfectivo() {
   let carry = 0;
   for (const mes of mesesAsc) {
     saldoInicialMes[mes] = carry;
-    const ret = retiradaEfectivo.filter(r => r.mes === mes).reduce((s, r) => s + r.importe, 0);
+    const ingTx = txIngresosEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
     const gastoTx = txEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
     const gastoLocal = gastosEfectivoLocal.filter(g => g.mes === mes).reduce((s, g) => s + g.importe, 0);
-    carry = Math.max(0, saldoInicialMes[mes] + ret - gastoTx - gastoLocal);
+    carry = Math.max(0, saldoInicialMes[mes] + ingTx - gastoTx - gastoLocal);
   }
 
   el.innerHTML = meses.map((mes, idx) => {
@@ -11028,15 +11159,15 @@ function renderEfectivo() {
     const mesLabel = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     const mesLabelCap = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1);
 
-    const retiradas = retiradaEfectivo.filter(r => r.mes === mes);
-    const totalRetirado = retiradas.reduce((s, r) => s + r.importe, 0);
+    const ingMes = txIngresosEfectivo.filter(t => t.fecha.startsWith(mes));
+    const totalIngresado = ingMes.reduce((s, t) => s + t.importe, 0);
     const txMes = txEfectivo.filter(t => t.fecha.startsWith(mes));
     const gastosLocalesMes = gastosEfectivoLocal.filter(g => g.mes === mes);
     const totalGastadoTx = txMes.reduce((s, t) => s + t.importe, 0);
     const totalGastadoLocal = gastosLocalesMes.reduce((s, g) => s + g.importe, 0);
     const totalGastado = totalGastadoTx + totalGastadoLocal;
     const anterior = saldoInicialMes[mes] || 0;
-    const disponible = anterior + totalRetirado;
+    const disponible = anterior + totalIngresado;
     const saldoFinal = disponible - totalGastado;
     const pctGastado = disponible > 0 ? Math.min(100, Math.round(totalGastado / disponible * 100)) : 0;
     const colorSaldo = saldoFinal >= 0 ? 'var(--green)' : 'var(--red)';
@@ -11061,9 +11192,9 @@ function renderEfectivo() {
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Retirado</div>
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado)}</div>
-          ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} de mes anterior</div>` : ''}
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Ingresado efectivo</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalIngresado)}</div>
+          ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} del mes anterior</div>` : ''}
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Gastado</div>
@@ -11080,15 +11211,11 @@ function renderEfectivo() {
         <div style="height:6px;background:${barColor};width:${pctGastado}%;border-radius:4px"></div>
       </div>` : ''}
 
-      ${retiradas.length > 0 ? `<div style="margin-bottom:12px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Retiradas del cajero</div>
-        ${retiradas.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
-          <span style="color:var(--text)">${r.desc}</span>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(r.importe)}</span>
-            <button onclick="editarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Editar">✏️</button>
-            <button onclick="eliminarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Eliminar">✕</button>
-          </div>
+      ${ingMes.length > 0 ? `<div style="margin-bottom:12px">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Ingresos en efectivo</div>
+        ${ingMes.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
+          <span style="color:var(--text)">${t.desc}</span>
+          <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(t.importe)}</span>
         </div>`).join('')}
       </div>` : ''}
 
@@ -11151,8 +11278,11 @@ function renderCierre() {
   setEl('cierre-gastos', fmt(gastos), 'var(--red)');
   setEl('cierre-ahorro', fmt(ahorro), ahorro>=0?'var(--green)':'var(--red)');
   setEl('cierre-ahorro-pct', `Tasa de ahorro: ${ahorroP}%`);
-  const totalBudget = Object.values(budgets).reduce((a,b)=>a+b,0);
-  const diffBudget  = totalBudget - gastos;
+  // Presupuesto del mes: solo categorías que tienen gastos en ese mes
+  const catsMes = {};
+  txMes.filter(t=>t.tipo==='Gasto').forEach(t => { catsMes[t.cat] = (catsMes[t.cat]||0) + t.importe; });
+  const totalBudgetMes = Object.keys(catsMes).reduce((a,cat) => a + (budgets[cat]||0), 0);
+  const diffBudget  = totalBudgetMes - gastos;
   setEl('cierre-vs-budget', fmt(Math.abs(diffBudget)), diffBudget>=0?'var(--green)':'var(--red)');
   setEl('cierre-vs-budget-sub', diffBudget>=0 ? `${fmt(diffBudget)} por debajo del presupuesto` : `${fmt(-diffBudget)} por encima del presupuesto`);
 
