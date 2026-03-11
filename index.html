@@ -1,5 +1,4 @@
 
-
 <!-- saved from url=(0034)https://pulso-betsabe.netlify.app/ -->
 <html lang="es" data-theme="crema"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
@@ -3064,8 +3063,8 @@
         <div class="card-header">
           <div class="card-title">Fondos de Inversión</div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="exportCarteraXLS()">📥 XLS</button>
-            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importar CSV</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="exportarFondosXLS()">📥 Exportar XLS</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="document.getElementById(&#39;investingFile&#39;).click()">⬆ Importing CSV</button>
             <input type="file" id="investingFile" accept=".csv" style="display:none" onchange="importInvesting(this)">
             <button class="btn btn-gold" style="font-size:12px;padding:5px 12px;" onclick="openModal(&#39;modalFund&#39;)">+ Fondo</button>
           </div>
@@ -3571,35 +3570,36 @@
     </div>
 
     <!-- Flujo principal -->
-    <div class="teso-flow" style="grid-template-columns:repeat(5,1fr)">
+    <div class="teso-flow">
       <div class="teso-block">
         <div class="teso-label">Saldo Inicial</div>
         <div class="teso-value" id="teso-inicial">—</div>
-        <div class="teso-sub">Cuenta corriente</div>
+        <div class="teso-sub">Inicio del período</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
         <div class="teso-label">+ Ingresos cuenta</div>
         <div class="teso-value" style="color:var(--green)" id="teso-ingresos">—</div>
-        <div class="teso-sub" id="teso-ing-count">en cuenta</div>
+        <div class="teso-sub" id="teso-ing-count">0 entradas</div>
         <div class="teso-arrow">→</div>
       </div>
-      <div class="teso-block">
-        <div class="teso-label">+ Ingresos efectivo</div>
-        <div class="teso-value" style="color:var(--accent)" id="teso-efectivo">—</div>
-        <div class="teso-sub">No va a cuenta</div>
-        <div class="teso-arrow">→</div>
+      <div class="teso-block" style="opacity:0.75;border-style:dashed">
+        <div class="teso-label" style="color:var(--muted)">↕ Efectivo</div>
+        <div class="teso-value" style="font-size:15px" id="teso-ing-efectivo">—</div>
+        <div class="teso-sub" id="teso-efec-count">0 mov.</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">Disp: <span id="teso-efec-disp">—</span></div>
+        <div class="teso-arrow" style="color:var(--muted)">→</div>
       </div>
       <div class="teso-block">
         <div class="teso-label">− Gastos cuenta</div>
         <div class="teso-value" style="color:var(--red)" id="teso-gastos">—</div>
-        <div class="teso-sub" id="teso-gas-count">en cuenta</div>
+        <div class="teso-sub" id="teso-gas-count">0 salidas</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
         <div class="teso-label">Saldo Final cuenta</div>
-        <div class="teso-value" id="teso-final" style="color:var(--green)">—</div>
-        <div class="teso-sub">Sin efectivo</div>
+        <div class="teso-value" id="teso-final">—</div>
+        <div class="teso-sub">Saldo inicial editable ↓</div>
       </div>
     </div>
 
@@ -4880,7 +4880,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:20px">
           <div class="form-group" style="margin:0">
             <label class="form-label">Tengo ahora en fondos (€)</label>
-            <input type="number" class="form-input" id="fnd-capital" oninput="calcFondos()" placeholder="63.793 € (tu cartera actual)">
+            <input type="number" class="form-input" id="fnd-capital" oninput="calcFondos()" placeholder="63.793 € (tu cartera actual)">
           </div>
           <div class="form-group" style="margin:0">
             <label class="form-label">Aportación mensual (€)</label>
@@ -5115,7 +5115,7 @@
   <div class="tab-content" id="tab-viajes">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
       <div>
-        <div style="font-family:var(--font-display);font-size:28px;font-weight:600">✈ Planificador de Viajes</div>
+        <div style="font-family:var(--font-display);font-size:28px;font-weight:600">Planificador de Viajes</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Presupuesto, reservas y seguimiento de gastos de viaje</div>
       </div>
       <button class="btn btn-gold" onclick="openModalViaje()">+ Nuevo viaje</button>
@@ -5124,23 +5124,23 @@
     <!-- KPIs viajes -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
       <div class="kpi-card">
-        <div class="kpi-label">Presupuesto total</div>
-        <div class="kpi-value" id="vj-gasto-anio" style="color:var(--accent)">—</div>
+        <div class="kpi-label">Gasto Viajes (año)</div>
+        <div class="kpi-value" id="vj-gasto-anio" style="color:var(--accent)">4500&nbsp;€</div>
         <div class="kpi-sub" id="vj-gasto-sub">del presupuesto anual</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Reservas confirmadas</div>
-        <div class="kpi-value" id="vj-reservado-total" style="color:var(--green)">—</div>
-        <div class="kpi-sub" id="vj-reservado-sub">ya pagado / reservado</div>
+        <div class="kpi-label">Presupuesto Total</div>
+        <div class="kpi-value" id="vj-presupuesto" style="color:var(--text)">4500&nbsp;€</div>
+        <div class="kpi-sub" id="vj-restante-sub">disponible</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Próximo Viaje</div>
-        <div class="kpi-value" id="vj-proximo" style="color:var(--blue);font-size:18px">—</div>
-        <div class="kpi-sub" id="vj-proximo-fecha"></div>
+        <div class="kpi-value" id="vj-proximo" style="color:var(--blue);font-size:18px">Grecia</div>
+        <div class="kpi-sub" id="vj-proximo-fecha"><span class="badge badge-blue">en 148 días</span></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Viajes Planificados</div>
-        <div class="kpi-value" id="vj-count" style="color:var(--green)">0</div>
+        <div class="kpi-value" id="vj-count" style="color:var(--green)">1</div>
         <div class="kpi-sub" id="vj-realizados-count">0 realizados</div>
       </div>
     </div>
@@ -5155,27 +5155,68 @@
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px" id="vj-capacidad-grid">
           <div>
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">Ingresos mensuales medios</div>
-            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--green)" id="vj-ingresos-medios">—</div>
+            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--green)" id="vj-ingresos-medios">4163&nbsp;€</div>
           </div>
           <div>
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">Gastos mensuales medios</div>
-            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--red)" id="vj-gastos-medios">—</div>
+            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--red)" id="vj-gastos-medios">3137&nbsp;€</div>
           </div>
           <div>
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">Margen mensual</div>
-            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--green)" id="vj-margen-mensual">—</div>
+            <div style="font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--green);" id="vj-margen-mensual">1026&nbsp;€</div>
           </div>
           <div>
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">Puedes gastar en viajes este año</div>
-            <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--accent)" id="vj-disponible-anio">—</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="vj-disponible-sub"></div>
+            <div style="font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--accent);" id="vj-disponible-anio">7812&nbsp;€</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="vj-disponible-sub">Margen anual 12.312&nbsp;€ − 4500&nbsp;€ ya comprometido en viajes</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Lista de viajes -->
-    <div id="viajes-list"></div>
+    <div id="viajes-list"><div class="card" style="margin-bottom:12px">
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <span style="font-family:var(--font-display);font-size:20px;font-weight:600">Grecia</span>
+              <span style="padding:2px 8px;border-radius:2px;font-size:10px;font-weight:500;background:rgba(0,0,0,0.05);color:var(--blue);border:1px solid var(--blue)">Planificado</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">
+              Vacaciones · 15 días
+               · 1/8/2026 → 15/8/2026
+              · 3 personas
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="openModalViaje(1772194203754)">✏️ Editar</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteViaje(1772194203754)">🗑</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Presupuesto</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500">4500&nbsp;€</div>
+            <div style="font-size:10px;color:var(--muted)">1500&nbsp;€/persona · 300&nbsp;€/día</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Gasto Real</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--text)">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Restante</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--green)">
+              4500&nbsp;€
+            </div>
+          </div>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:0%;background:var(--green);border-radius:2px;transition:width 0.4s"></div>
+        </div>
+        
+      </div>
+    </div></div>
   </div>
 
   <!-- ===== GASTOS EXTRAORDINARIOS ===== -->
@@ -7213,101 +7254,33 @@
         <input type="number" class="form-input" id="vj-presupuesto-modal" placeholder="0">
       </div>
       <div class="form-group">
+        <label class="form-label">Gasto Real (€)</label>
+        <input type="number" class="form-input" id="vj-gasto-real" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label class="form-label">Personas</label>
         <input type="number" class="form-input" id="vj-personas" value="1" min="1">
       </div>
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" id="vj-tipo">
+          <option>Vacaciones</option>
+          <option>Puente</option>
+          <option>Escapada</option>
+          <option>Viaje de negocios</option>
+          <option>Familiar</option>
+        </select>
+      </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Tipo</label>
-      <select class="form-input" id="vj-tipo">
-        <option>Vacaciones</option>
-        <option>Puente</option>
-        <option>Escapada</option>
-        <option>Viaje de negocios</option>
-        <option>Familiar</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Notas</label>
-      <input type="text" class="form-input" id="vj-notas" placeholder="Observaciones generales...">
+      <label class="form-label">Notas (vuelos, hotel...)</label>
+      <input type="text" class="form-input" id="vj-notas" placeholder="Vuelo Ryanair FR1234, Hotel NH...">
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal(&#39;modalViaje&#39;)">Cancelar</button>
       <button class="btn btn-gold" onclick="saveViaje()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: RESERVA -->
-<div class="modal-overlay" id="modalReserva">
-  <div class="modal" style="width:480px">
-    <div class="modal-title" id="modalReservaTitle">Nueva Reserva</div>
-    <input type="hidden" id="rv-viaje-id" value="">
-    <input type="hidden" id="rv-edit-id" value="">
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Categoría</label>
-        <select class="form-input" id="rv-categoria" onchange="updateReservaPlataformas()">
-          <option value="vuelo">✈️ Vuelo</option>
-          <option value="alojamiento">🏠 Alojamiento</option>
-          <option value="transporte">⛴️ Transporte</option>
-          <option value="restaurante">🍽️ Restaurante</option>
-          <option value="actividad">🎭 Actividad</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Estado</label>
-        <select class="form-input" id="rv-estado">
-          <option value="confirmada">✓ Confirmada</option>
-          <option value="pendiente">⏳ Pendiente</option>
-          <option value="cancelada">✗ Cancelada</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Descripción</label>
-      <input type="text" class="form-input" id="rv-desc" placeholder="Ej: Vuelo Madrid-Atenas, Hotel Plaka...">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Fecha</label>
-        <input type="date" class="form-input" id="rv-fecha">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Importe (€)</label>
-        <input type="number" class="form-input" id="rv-importe" placeholder="0" step="0.01">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Plataforma</label>
-        <select class="form-input" id="rv-plataforma">
-          <option value="">— Sin especificar —</option>
-          <option>Iberia.com</option>
-          <option>Vueling.com</option>
-          <option>Ryanair.com</option>
-          <option>Booking.com</option>
-          <option>Airbnb</option>
-          <option>Ferryhopper</option>
-          <option>Renfe</option>
-          <option>Avis / Hertz / Sixt</option>
-          <option>TripAdvisor</option>
-          <option>Directo</option>
-          <option>Otro</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nº Reserva / Localizador</label>
-        <input type="text" class="form-input" id="rv-localizador" placeholder="ABC123">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Notas</label>
-      <input type="text" class="form-input" id="rv-notas" placeholder="Detalles adicionales, horarios, confirmaciones...">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;modalReserva&#39;)">Cancelar</button>
-      <button class="btn btn-gold" onclick="saveReserva()">Guardar</button>
     </div>
   </div>
 </div>
@@ -7368,6 +7341,44 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalGastoEfectivo')">Cancelar</button>
       <button class="btn btn-primary" id="efg-save-btn" onclick="guardarGastoEfectivo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAGO PARCIAL GASTO EXTRA -->
+<div class="modal-overlay" id="modalPagoParcial">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">💳 Registrar pago a cuenta</div>
+      <button class="btn btn-ghost" onclick="closeModal('modalPagoParcial')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pago-parcial-id">
+      <div style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px" id="pago-parcial-desc">—</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;text-align:center">
+          <div><div style="color:var(--muted)">Total</div><div style="font-family:var(--font-mono);font-weight:600" id="pago-parcial-total">—</div></div>
+          <div><div style="color:var(--muted)">Pagado</div><div style="font-family:var(--font-mono);color:var(--green);font-weight:600" id="pago-parcial-pagado">—</div></div>
+          <div><div style="color:var(--muted)">Pendiente</div><div style="font-family:var(--font-mono);color:var(--blue);font-weight:600" id="pago-parcial-pendiente">—</div></div>
+        </div>
+        <div style="background:var(--surface);border-radius:4px;height:6px;margin-top:10px"><div id="pago-parcial-barra" style="height:6px;background:var(--green);border-radius:4px;width:0%;transition:width 0.3s"></div></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Importe del pago (€)</label>
+        <input type="number" id="pago-parcial-importe" class="form-control" placeholder="ej: 2000" step="1" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha del pago</label>
+        <input type="date" id="pago-parcial-fecha" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nota (opcional)</label>
+        <input type="text" id="pago-parcial-nota" class="form-control" placeholder="ej: 1ª cuota implantes">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalPagoParcial')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPagoParcial()">Guardar pago</button>
     </div>
   </div>
 </div>
@@ -8285,30 +8296,48 @@ function renderFunds() {
   if (funds.length === 0) {
     list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Añade tus fondos de inversión</div>';
   } else {
-    list.innerHTML = funds.map((f,i) => {
+    // Calcular años desde inicio de cartera para rentabilidad anualizada
+    const inicioRef = new Date('2020-04-01');
+    const hoyRef = new Date();
+    const añosTotales = Math.max(1, (hoyRef - inicioRef) / (365.25 * 24 * 3600 * 1000));
+    // Rentabilidad del año en curso: usando histórico de cartera del mes de enero/inicio de año actual
+    const añoActual = hoyRef.getFullYear();
+    const hcAnio = historicoCartera ? [...historicoCartera].filter(h => h.mesKey && h.mesKey.startsWith(añoActual + '-01')).sort((a,b)=>a.fecha.localeCompare(b.fecha)) : [];
+    const hcRef = hcAnio.length ? hcAnio[0] : null;
+
+    // Header tabla
+    list.innerHTML = `<div style="display:grid;grid-template-columns:1fr 75px 80px 80px 75px 75px 40px 60px;gap:4px;padding:8px 16px;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border)">
+      <span>Fondo</span><span style="text-align:right">Coste</span><span style="text-align:right">Valor actual</span><span style="text-align:right">Plusvalía €</span><span style="text-align:right">Total %</span><span style="text-align:right">Año %</span><span style="text-align:center">🚦</span><span></span>
+    </div>` + funds.map((f,i) => {
       const diff = f.valor - f.coste;
-      const pct = f.coste ? (diff/f.coste*100).toFixed(1) : 0;
+      const pctTotal = f.coste ? (diff/f.coste*100) : 0;
       const weight = total ? (f.valor/total*100).toFixed(1) : 0;
-      return `
-        <div class="fund-row">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div class="fund-name">${f.nombre}</div>
-              <div class="fund-ticker">${f.ticker} · ${f.gestora}</div>
-            </div>
-            <div style="display:flex;gap:4px;align-items:center">
-              <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px" title="Actualizar valor">✏️</button>
-              <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px" title="Eliminar">✕</button>
-            </div>
-          </div>
-          <div class="fund-meta">
-            <span style="font-family:var(--font-mono);font-size:13px">${fmt(f.valor)}</span>
-            <div class="progress-bar"><div class="progress-fill" style="width:${weight}%"></div></div>
-            <span class="${diff>=0?'amount-pos':'amount-neg'}" style="font-size:12px">${diff>=0?'+':''}${pct}%</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Coste: ${fmt(f.coste)} · Peso: ${weight}%</div>
+      // Rentabilidad del año: comparar con valor a inicio de año del mismo fondo
+      let rentAnio = null;
+      if (hcRef && hcRef.fondos) {
+        const fRef = hcRef.fondos.find(x => x.ticker === f.ticker);
+        if (fRef && fRef.valor > 0) rentAnio = (f.valor / fRef.valor - 1) * 100;
+      }
+      // Semáforo: basado en rentabilidad total
+      const semaforo = pctTotal >= 20 ? '🟢' : pctTotal >= 5 ? '🟡' : pctTotal >= 0 ? '🟠' : '🔴';
+      const colorTotal = pctTotal >= 0 ? 'var(--green)' : 'var(--red)';
+      const colorAnio = rentAnio === null ? 'var(--muted)' : rentAnio >= 0 ? 'var(--green)' : 'var(--red)';
+      return `<div style="display:grid;grid-template-columns:1fr 75px 80px 80px 75px 75px 40px 60px;gap:4px;padding:10px 16px;align-items:center;border-bottom:1px solid var(--surface2)">
+        <div>
+          <div style="font-size:12px;font-weight:500">${f.nombre.length>38?f.nombre.substring(0,38)+'…':f.nombre}</div>
+          <div style="font-size:10px;color:var(--muted)">${f.gestora} · ${weight}%</div>
         </div>
-      `;
+        <div style="text-align:right;font-family:var(--font-mono);font-size:11px">${fmt(f.coste)}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:500">${fmt(f.valor)}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorTotal}">${diff>=0?'+':''}${fmt(diff)}</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorTotal}">${pctTotal>=0?'+':''}${pctTotal.toFixed(1)}%</div>
+        <div style="text-align:right;font-family:var(--font-mono);font-size:12px;color:${colorAnio}">${rentAnio!==null?(rentAnio>=0?'+':'')+rentAnio.toFixed(1)+'%':'—'}</div>
+        <div style="text-align:center;font-size:16px">${semaforo}</div>
+        <div style="display:flex;gap:2px">
+          <button onclick="editFundValor(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Actualizar valor">✏️</button>
+          <button onclick="deleteFund(${f.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px" title="Eliminar">✕</button>
+        </div>
+      </div>`;
     }).join('');
   }
 
@@ -8346,7 +8375,26 @@ function renderPatrimonio() {
   if (activos.length === 0) {
     listA.innerHTML = '<div class="empty-state"><div class="empty-icon">🏦</div>Añade tus activos</div>';
   } else {
-    listA.innerHTML = activos.map(a => `
+    // Calcular saldo efectivo disponible desde transacciones
+    const txEfectivoGastoP = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
+    const txEfectivoIngresoP = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
+    const saldoEfectivoP = txEfectivoIngresoP.reduce((a,b)=>a+b.importe,0) - txEfectivoGastoP.reduce((a,b)=>a+b.importe,0);
+
+    // Para Cuenta BK: saldo cuenta corriente = valor activo - efectivo disponible
+    listA.innerHTML = activos.map(a => {
+      const esCuentaBK = a.nombre === 'Cuenta BK' && a.tipo === 'Cuenta bancaria';
+      const subdetalle = esCuentaBK ? `
+        <div style="margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;font-size:11px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--muted)">
+            <span>↳ Cuenta corriente</span>
+            <span style="font-family:var(--font-mono);color:var(--text)">${fmt(Math.max(0, a.valor - Math.max(0, saldoEfectivoP)))}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:var(--muted)">
+            <span>↳ Efectivo disponible</span>
+            <span style="font-family:var(--font-mono);color:var(--green)">${fmt(Math.max(0, saldoEfectivoP))}</span>
+          </div>
+        </div>` : '';
+      return `
       <div class="fund-row" style="padding:10px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div style="flex:1;min-width:0">
@@ -8358,8 +8406,10 @@ function renderPatrimonio() {
             <button onclick="deleteActivo(${a.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">✕</button>
           </div>
         </div>
+        ${subdetalle}
       </div>
-    `).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
+    `;
+    }).join('') + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total Activos</span><span style="color:var(--green);font-family:var(--font-mono)">${fmt(totalActivos)}</span></div>`;
   }
 
   const listP = document.getElementById('pasivosList');
@@ -8654,25 +8704,30 @@ function renderTesoreria() {
   const filter = document.getElementById('tesoMonthFilter') ? document.getElementById('tesoMonthFilter').value : 'all';
   const txs = getFilteredTx(filter);
 
-  const ingEfectivo   = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta==='Efectivo').reduce((a,b)=>a+b.importe,0);
-  const ingCuenta     = txs.filter(t=>t.tipo==='Ingreso' && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
-  const gasCuenta     = txs.filter(t=>t.tipo==='Gasto'   && t.cuenta!=='Efectivo').reduce((a,b)=>a+b.importe,0);
+  // Separar cuenta corriente vs efectivo
+  const txsCuenta = txs.filter(t => t.cuenta !== 'Efectivo');
+  const txsEfectivo = txs.filter(t => t.cuenta === 'Efectivo');
 
+  const ingresosCuenta = txsCuenta.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
+  const ingresosEfectivo = txsEfectivo.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
+  const gastosCuenta = txsCuenta.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
+  const gastosEfectivo = txsEfectivo.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
+
+  // Saldo inicial: for a specific month use stored, for 'all' sum all saldos
   let saldoInicial = 0;
   if (filter !== 'all') {
     saldoInicial = parseFloat(saldosIniciales[filter] || 0);
   } else {
+    // use oldest month's saldo inicial
     const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
     if (months.length) saldoInicial = parseFloat(saldosIniciales[months[0]] || 0);
   }
-  const saldoFinal = saldoInicial + ingCuenta - gasCuenta;
+  // Saldo final cuenta: solo cuenta corriente (efectivo no afecta)
+  const saldoFinalCuenta = saldoInicial + ingresosCuenta - gastosCuenta;
+  // Saldo efectivo disponible
+  const saldoEfectivo = ingresosEfectivo - gastosEfectivo;
 
-  document.getElementById('teso-inicial').textContent = fmt(saldoInicial);
-  document.getElementById('teso-ingresos').textContent = fmt(ingCuenta);
-  document.getElementById('teso-gastos').textContent = fmt(gasCuenta);
-  const efEl = document.getElementById('teso-efectivo');
-  if (efEl) efEl.textContent = fmt(ingEfectivo);
-
+  // Incluir cuotas de ahorro/reposición del mes como salida prevista
   let cuotasAhorroMes = 0;
   if (filter !== 'all') {
     (gastosExtra || []).forEach(e => {
@@ -8683,11 +8738,23 @@ function renderTesoreria() {
       if (cuotaMes) cuotasAhorroMes += cuotaMes.cantidad;
     });
   }
-  const saldoFinalConAhorro = saldoFinal - cuotasAhorroMes;
-  document.getElementById('teso-final').textContent = fmt(saldoFinalConAhorro);
-  document.getElementById('teso-final').style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('teso-ing-count').textContent = txs.filter(t=>t.tipo==='Ingreso'&&t.cuenta!=='Efectivo').length + ' en cuenta';
-  document.getElementById('teso-gas-count').textContent = txs.filter(t=>t.tipo==='Gasto'&&t.cuenta!=='Efectivo').length + ' en cuenta';
+  const saldoFinalConAhorro = saldoFinalCuenta - cuotasAhorroMes;
+
+  // Actualizar bloques HTML (5 bloques)
+  const setTxt = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  setTxt('teso-inicial', fmt(saldoInicial));
+  setTxt('teso-ingresos', fmt(ingresosCuenta));
+  setTxt('teso-ing-efectivo', fmt(ingresosEfectivo));
+  setTxt('teso-gastos', fmt(gastosCuenta));
+  setTxt('teso-final', fmt(saldoFinalConAhorro));
+  const finalEl = document.getElementById('teso-final');
+  if (finalEl) finalEl.style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
+  setTxt('teso-ing-count', txsCuenta.filter(t=>t.tipo==='Ingreso').length + ' entradas');
+  setTxt('teso-gas-count', txsCuenta.filter(t=>t.tipo==='Gasto').length + ' salidas');
+  setTxt('teso-efec-count', txsEfectivo.length + ' mov.');
+  // Saldo efectivo disponible
+  const efecDisp = document.getElementById('teso-efec-disp');
+  if (efecDisp) { efecDisp.textContent = fmt(saldoEfectivo); efecDisp.style.color = saldoEfectivo >= 0 ? 'var(--green)' : 'var(--red)'; }
 
   // Saldo inicial table por mes
   const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
@@ -8719,13 +8786,16 @@ function renderTesoreria() {
     `;
   }
 
-  // Budget vs Real — usar exactamente el mes seleccionado
-  const budgetFilter = filter;
+  // Budget vs Real — siempre usar el mes seleccionado (o el más reciente si es "todos")
+  let budgetFilter = filter;
+  if (!budgetFilter || budgetFilter === 'all') {
+    const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
+    budgetFilter = months.length ? months[months.length - 1] : 'all';
+  }
   const budgetTxs = getFilteredTx(budgetFilter);
   const catData = {};
   budgetTxs.filter(t=>t.tipo==='Gasto').forEach(t => { catData[t.cat] = (catData[t.cat]||0) + t.importe; });
-  // Also include cats that have a budget but no spending
-  Object.keys(budgets).forEach(c => { if (!catData[c]) catData[c] = 0; });
+  // Solo mostrar categorías que tienen gasto en el mes seleccionado (no todas las del presupuesto)
   const cats = Object.keys(catData).sort();
 
   // Alertas presupuesto
@@ -8901,6 +8971,35 @@ function saveMetaAhorro() {
 }
 
 // ===== INVESTING.COM IMPORT =====
+function exportarFondosXLS() {
+  const total = funds.reduce((a,b)=>a+b.valor,0);
+  const inicioRef = new Date('2020-04-01');
+  const hoyRef = new Date();
+  const añosTotales = Math.max(1, (hoyRef - inicioRef) / (365.25 * 24 * 3600 * 1000));
+  const añoActual = hoyRef.getFullYear();
+  const hcAnio = historicoCartera ? [...historicoCartera].filter(h => h.mesKey && h.mesKey.startsWith(añoActual + '-01')).sort((a,b)=>a.fecha.localeCompare(b.fecha)) : [];
+  const hcRef = hcAnio.length ? hcAnio[0] : null;
+
+  let csv = 'Fondo;Gestora;Ticker;Coste (€);Valor actual (€);Plusvalía (€);Rent. Total %;Rent. Año %;Peso %;Semáforo\n';
+  funds.forEach(f => {
+    const diff = f.valor - f.coste;
+    const pctTotal = f.coste ? (diff/f.coste*100) : 0;
+    const weight = total ? (f.valor/total*100) : 0;
+    let rentAnio = '';
+    if (hcRef && hcRef.fondos) {
+      const fRef = hcRef.fondos.find(x => x.ticker === f.ticker);
+      if (fRef && fRef.valor > 0) rentAnio = ((f.valor / fRef.valor - 1) * 100).toFixed(2);
+    }
+    const semaforo = pctTotal >= 20 ? '🟢' : pctTotal >= 5 ? '🟡' : pctTotal >= 0 ? '🟠' : '🔴';
+    csv += `"${f.nombre}";"${f.gestora}";"${f.ticker}";${f.coste.toFixed(2)};${f.valor.toFixed(2)};${diff.toFixed(2)};${pctTotal.toFixed(2)};${rentAnio};${weight.toFixed(2)};"${semaforo}"\n`;
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cartera_fondos_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
 function importInvesting(input) {
   const file = input.files[0];
   if (!file) return;
@@ -9739,9 +9838,10 @@ function renderTIR() {
     return;
   }
 
-  const fechaInicioCartera = new Date('2020-04-01');
+  // Años reales desde inicio de cartera: abril 2020
+  const inicioCartera = new Date('2020-04-01');
   const hoy = new Date();
-  const añosBase = Math.max(0.5, (hoy - fechaInicioCartera) / (1000*60*60*24*365.25));
+  const añosBase = Math.max(1, (hoy - inicioCartera) / (365.25 * 24 * 3600 * 1000));
 
   const fondosOrdenados = [...funds].sort((a,b) => {
     const tirA = calcTIR(a.coste, a.valor, añosBase) || -999;
@@ -9767,26 +9867,7 @@ function renderTIR() {
         </span>
       </div>
     </div>`;
-  }).join('');
-}
-
-function exportCarteraXLS() {
-  if (!funds || funds.length === 0) return alert('No hay fondos para exportar');
-  const total = funds.reduce((a,b)=>a+b.valor,0);
-  const headers = ['Fondo','Gestora','Ticker','Coste','Valor actual','Plusvalia','Rent. total %','Peso %'];
-  const rows = funds.map(f => {
-    const diff = f.valor - f.coste;
-    const pct = f.coste ? (diff/f.coste*100).toFixed(2) : '0';
-    const w = total ? (f.valor/total*100).toFixed(2) : '0';
-    return [f.nombre, f.gestora, f.ticker, f.coste.toFixed(2), f.valor.toFixed(2), diff.toFixed(2), pct, w];
-  });
-  const totalC = funds.reduce((a,b)=>a+b.coste,0);
-  rows.push(['TOTAL','','',totalC.toFixed(2),total.toFixed(2),(total-totalC).toFixed(2),totalC?(((total-totalC)/totalC)*100).toFixed(2):'0','100']);
-  const csv = [headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
-  a.download = 'cartera_' + new Date().toISOString().substring(0,10) + '.csv';
-  a.click();
+  }).join('') + `<div style="padding:10px 16px;font-size:10px;color:var(--muted);border-top:1px solid var(--surface2)">⚠ TIR anualizada calculada desde inicio real de cartera (abr 2020, ${añosBase.toFixed(1)} años). Asume coste como aportación única; para carteras con aportaciones periódicas el valor real puede diferir.</div>`;
 }
 
 function renderGestoras() {
@@ -10164,12 +10245,13 @@ function openModalViaje(id) {
     document.getElementById('vj-fecha-inicio').value = v.fechaInicio;
     document.getElementById('vj-fecha-fin').value = v.fechaFin;
     document.getElementById('vj-presupuesto-modal').value = v.presupuesto;
+    document.getElementById('vj-gasto-real').value = v.gastoReal || '';
     document.getElementById('vj-personas').value = v.personas || 1;
     document.getElementById('vj-tipo').value = v.tipo;
     document.getElementById('vj-notas').value = v.notas || '';
   } else {
     document.getElementById('modalViajeTitle').textContent = 'Nuevo Viaje';
-    ['vj-destino','vj-presupuesto-modal','vj-notas'].forEach(id => document.getElementById(id).value = '');
+    ['vj-destino','vj-presupuesto-modal','vj-gasto-real','vj-notas'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('vj-personas').value = 1;
     document.getElementById('vj-estado').value = 'planificado';
     document.getElementById('vj-tipo').value = 'Vacaciones';
@@ -10186,6 +10268,7 @@ function saveViaje() {
     fechaInicio: document.getElementById('vj-fecha-inicio').value,
     fechaFin: document.getElementById('vj-fecha-fin').value,
     presupuesto: parseFloat(document.getElementById('vj-presupuesto-modal').value) || 0,
+    gastoReal: parseFloat(document.getElementById('vj-gasto-real').value) || 0,
     personas: parseInt(document.getElementById('vj-personas').value) || 1,
     tipo: document.getElementById('vj-tipo').value,
     notas: document.getElementById('vj-notas').value.trim()
@@ -10257,83 +10340,16 @@ function renderViajesCapacidad() {
   }
 }
 
-// Reservas helper
-let reservas = JSON.parse(localStorage.getItem('wl_reservas') || '[]');
-
-function saveReservasLocal() {
-  localStorage.setItem('wl_reservas', JSON.stringify(reservas));
-}
-
-function openModalReserva(viajeId, reservaId) {
-  document.getElementById('rv-viaje-id').value = viajeId;
-  document.getElementById('rv-edit-id').value = reservaId || '';
-  if (reservaId) {
-    const r = reservas.find(x => x.id === reservaId);
-    document.getElementById('modalReservaTitle').textContent = 'Editar Reserva';
-    document.getElementById('rv-categoria').value = r.categoria || 'vuelo';
-    document.getElementById('rv-estado').value = r.estado || 'confirmada';
-    document.getElementById('rv-desc').value = r.desc || '';
-    document.getElementById('rv-fecha').value = r.fecha || '';
-    document.getElementById('rv-importe').value = r.importe || '';
-    document.getElementById('rv-plataforma').value = r.plataforma || '';
-    document.getElementById('rv-localizador').value = r.localizador || '';
-    document.getElementById('rv-notas').value = r.notas || '';
-  } else {
-    document.getElementById('modalReservaTitle').textContent = 'Nueva Reserva';
-    ['rv-desc','rv-fecha','rv-importe','rv-localizador','rv-notas'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('rv-categoria').value = 'vuelo';
-    document.getElementById('rv-estado').value = 'confirmada';
-    document.getElementById('rv-plataforma').value = '';
-  }
-  openModal('modalReserva');
-}
-
-function saveReserva() {
-  const viajeId = parseInt(document.getElementById('rv-viaje-id').value);
-  const editId = document.getElementById('rv-edit-id').value;
-  const r = {
-    id: editId ? parseInt(editId) : Date.now(),
-    viajeId,
-    categoria: document.getElementById('rv-categoria').value,
-    estado: document.getElementById('rv-estado').value,
-    desc: document.getElementById('rv-desc').value.trim(),
-    fecha: document.getElementById('rv-fecha').value,
-    importe: parseFloat(document.getElementById('rv-importe').value) || 0,
-    plataforma: document.getElementById('rv-plataforma').value,
-    localizador: document.getElementById('rv-localizador').value.trim(),
-    notas: document.getElementById('rv-notas').value.trim()
-  };
-  if (!r.desc) { alert('La descripción es obligatoria.'); return; }
-  if (editId) reservas = reservas.map(x => x.id === parseInt(editId) ? r : x);
-  else reservas.push(r);
-  saveReservasLocal();
-  closeModal('modalReserva');
-  renderViajes();
-}
-
-function deleteReserva(id) {
-  if (!confirm('¿Eliminar esta reserva?')) return;
-  reservas = reservas.filter(x => x.id !== id);
-  saveReservasLocal();
-  renderViajes();
-}
-
-function updateReservaPlataformas() {}
-
 function renderViajes() {
   const hoy = new Date(); hoy.setHours(0,0,0,0);
   const anioActual = new Date().getFullYear();
-
+  
+  const gastosAnio = viajes.filter(v => v.fechaInicio && parseInt(v.fechaInicio.substring(0,4)) === anioActual);
+  const gastoTotal = gastosAnio.reduce((a,v) => a + (v.gastoReal || v.presupuesto), 0);
   const presupuestoTotal = viajes.reduce((a,v) => a + v.presupuesto, 0);
-  const reservasTotales = reservas.filter(r => r.estado === 'confirmada').reduce((a,r) => a + r.importe, 0);
 
-  const vj_gasto = document.getElementById('vj-gasto-anio');
-  const vj_reservado = document.getElementById('vj-reservado-total');
-  const vj_reservado_sub = document.getElementById('vj-reservado-sub');
-  if (vj_gasto) vj_gasto.textContent = fmt(presupuestoTotal);
-  if (vj_reservado) vj_reservado.textContent = fmt(reservasTotales);
-  if (vj_reservado_sub) vj_reservado_sub.textContent = presupuestoTotal > 0 ? `de ${fmt(presupuestoTotal)} presupuestado` : 'ya pagado / reservado';
-
+  document.getElementById('vj-gasto-anio').textContent = fmt(gastoTotal);
+  document.getElementById('vj-presupuesto').textContent = fmt(presupuestoTotal);
   document.getElementById('vj-count').textContent = viajes.filter(v => ['planificado','reservado'].includes(v.estado)).length;
   document.getElementById('vj-realizados-count').textContent = `${viajes.filter(v=>v.estado==='realizado').length} realizados`;
 
@@ -10352,9 +10368,6 @@ function renderViajes() {
 
   const estadoColors = {planificado:'var(--blue)',reservado:'var(--accent)',realizado:'var(--green)',cancelado:'var(--muted)'};
   const estadoLabels = {planificado:'Planificado',reservado:'Reservado',realizado:'Realizado',cancelado:'Cancelado'};
-  const catEmoji = {vuelo:'✈️', alojamiento:'🏠', transporte:'⛴️', restaurante:'🍽️', actividad:'🎭'};
-  const catLabel = {vuelo:'Vuelo', alojamiento:'Alojamiento', transporte:'Transporte', restaurante:'Restaurante', actividad:'Actividad'};
-  const catColor = {vuelo:'var(--blue)', alojamiento:'var(--green)', transporte:'var(--accent)', restaurante:'var(--red)', actividad:'var(--muted)'};
 
   const listaEl = document.getElementById('viajes-list');
   if (viajes.length === 0) {
@@ -10369,49 +10382,10 @@ function renderViajes() {
   });
 
   listaEl.innerHTML = sorted.map(v => {
-    const dias = v.fechaInicio && v.fechaFin ?
+    const pctGasto = v.presupuesto > 0 ? Math.min(100, ((v.gastoReal||0)/v.presupuesto)*100) : 0;
+    const dias = v.fechaInicio && v.fechaFin ? 
       Math.ceil((new Date(v.fechaFin+'T00:00:00') - new Date(v.fechaInicio+'T00:00:00')) / (1000*60*60*24)) + 1 : null;
-
-    const vReservas = reservas.filter(r => r.viajeId === v.id);
-    const totalReservado = vReservas.filter(r => r.estado === 'confirmada').reduce((a,r) => a + r.importe, 0);
-    const pct = v.presupuesto > 0 ? Math.min(100, (totalReservado / v.presupuesto) * 100) : 0;
-
-    // Totales por categoría
-    const cats = ['vuelo','alojamiento','transporte','restaurante','actividad'];
-    const totalesCat = cats.map(cat => {
-      const total = vReservas.filter(r => r.categoria === cat).reduce((a,r) => a + r.importe, 0);
-      return `<div style="text-align:center;padding:10px 8px;background:var(--bg);border-radius:4px;border:1px solid var(--border)">
-        <div style="font-size:18px;margin-bottom:4px">${catEmoji[cat]}</div>
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">${catLabel[cat]}</div>
-        <div style="font-size:13px;font-weight:600;margin-top:2px;color:${total > 0 ? catColor[cat] : 'var(--muted)'}">${total > 0 ? fmt(total) : '—'}</div>
-      </div>`;
-    }).join('');
-
-    // Lista reservas
-    const reservasHTML = vReservas.length > 0 ? `
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
-        ${vReservas.map(r => `
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;position:relative">
-            <div style="width:30px;height:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(0,0,0,0.04)">${catEmoji[r.categoria]||'📌'}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)">${catLabel[r.categoria]||r.categoria}</div>
-              <div style="font-size:12px;font-weight:500;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.desc}</div>
-              <div style="font-size:11px;color:var(--muted)">${r.fecha ? new Date(r.fecha+'T00:00:00').toLocaleDateString('es-ES') : ''}${r.notas ? ' · ' + r.notas : ''}</div>
-              ${r.plataforma ? `<span style="display:inline-block;padding:1px 6px;background:var(--surface2);border-radius:2px;font-size:9px;color:var(--muted);margin-top:4px">${r.plataforma}</span>` : ''}
-              ${r.localizador ? `<span style="display:inline-block;padding:1px 6px;background:var(--surface2);border-radius:2px;font-size:9px;color:var(--muted);margin-top:4px;margin-left:4px">🔖 ${r.localizador}</span>` : ''}
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:13px;font-weight:600">${fmt(r.importe)}</div>
-              <div style="font-size:10px;color:${r.estado==='confirmada'?'var(--green)':r.estado==='pendiente'?'var(--accent)':'var(--muted)'};margin-top:4px">${r.estado==='confirmada'?'✓ Confirmada':r.estado==='pendiente'?'⏳ Pendiente':'✗ Cancelada'}</div>
-              <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:6px">
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:10px" onclick="openModalReserva(${v.id},${r.id})">✏️</button>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:10px;border-color:var(--red);color:var(--red)" onclick="deleteReserva(${r.id})">🗑</button>
-              </div>
-            </div>
-          </div>`).join('')}
-      </div>` : '';
-
-    return `<div class="card" style="margin-bottom:16px">
+    return `<div class="card" style="margin-bottom:12px">
       <div style="padding:20px 24px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
           <div>
@@ -10426,34 +10400,30 @@ function renderViajes() {
             </div>
           </div>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="openModalViaje(${v.id})">✏️ Editar viaje</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="openModalViaje(${v.id})">✏️ Editar</button>
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteViaje(${v.id})">🗑</button>
           </div>
         </div>
-
-        <!-- Totales por categoría -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px">${totalesCat}</div>
-
-        <!-- Barra presupuesto -->
-        <div style="margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
-            <span>Reservado: <strong style="color:var(--accent)">${fmt(totalReservado)}</strong></span>
-            <span>Presupuesto: <strong>${fmt(v.presupuesto)}</strong></span>
-            <span style="color:var(--green)">Disponible: <strong>${fmt(Math.max(0, v.presupuesto - totalReservado))}</strong></span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:${v.presupuesto > 0 ? '14px' : '0'}">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Presupuesto</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500">${fmt(v.presupuesto)}</div>
+            ${dias && v.presupuesto ? `<div style="font-size:10px;color:var(--muted)">${fmt(v.presupuesto/v.personas)}/persona · ${fmt(v.presupuesto/dias)}/día</div>` : ''}
           </div>
-          <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${pct>90?'var(--red)':pct>70?'#b8901f':'var(--green)'};border-radius:3px;transition:width 0.4s"></div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Gasto Real</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${v.gastoReal > v.presupuesto && v.presupuesto > 0 ? 'var(--red)' : 'var(--text)'}">${v.gastoReal ? fmt(v.gastoReal) : '—'}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">${v.gastoReal ? 'Desviación' : 'Restante'}</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${v.gastoReal && v.gastoReal > v.presupuesto ? 'var(--red)' : 'var(--green)'}">
+              ${v.gastoReal ? (v.gastoReal > v.presupuesto ? '+' : '') + fmt(v.gastoReal - v.presupuesto) : fmt(v.presupuesto)}
+            </div>
           </div>
         </div>
-
-        <!-- Reservas existentes -->
-        ${reservasHTML}
-
-        <!-- Botones añadir reserva -->
-        <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--border)">
-          ${cats.map(cat => `<button onclick="openModalReserva(${v.id})" style="display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--bg);border:1px dashed var(--border);border-radius:4px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font-display);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">${catEmoji[cat]} + ${catLabel[cat]}</button>`).join('')}
-        </div>
-
+        ${v.presupuesto > 0 ? `<div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pctGasto}%;background:${pctGasto>100?'var(--red)':pctGasto>80?'#b8901f':'var(--green)'};border-radius:2px;transition:width 0.4s"></div>
+        </div>` : ''}
         ${v.notas ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;font-style:italic">📝 ${v.notas}</div>` : ''}
       </div>
     </div>`;
@@ -10520,6 +10490,42 @@ function deleteExtra(id) {
   if (!confirm('¿Eliminar este gasto?')) return;
   gastosExtra = gastosExtra.filter(x => x.id !== id);
   localStorage.setItem('wl_gastos_extra', JSON.stringify(gastosExtra));
+  renderGastosExtra();
+}
+
+function abrirPagoParcial(id) {
+  const e = gastosExtra.find(x => x.id === id);
+  if (!e) return;
+  const pagado = e.pagos ? e.pagos.reduce((a,p)=>a+p.importe,0) : (e.importeReal || 0);
+  const pendiente = e.importe - pagado;
+  document.getElementById('pago-parcial-id').value = id;
+  document.getElementById('pago-parcial-desc').textContent = e.desc;
+  document.getElementById('pago-parcial-total').textContent = fmt(e.importe);
+  document.getElementById('pago-parcial-pagado').textContent = fmt(pagado);
+  document.getElementById('pago-parcial-pendiente').textContent = fmt(pendiente);
+  document.getElementById('pago-parcial-barra').style.width = Math.min(100, Math.round(pagado/e.importe*100)) + '%';
+  document.getElementById('pago-parcial-importe').value = '';
+  document.getElementById('pago-parcial-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('pago-parcial-nota').value = '';
+  openModal('modalPagoParcial');
+}
+
+function guardarPagoParcial() {
+  const id = parseInt(document.getElementById('pago-parcial-id').value);
+  const importe = parseFloat(document.getElementById('pago-parcial-importe').value);
+  const fecha = document.getElementById('pago-parcial-fecha').value;
+  const nota = document.getElementById('pago-parcial-nota').value.trim();
+  if (!importe || importe <= 0) return alert('Introduce un importe válido');
+  const idx = gastosExtra.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  if (!gastosExtra[idx].pagos) gastosExtra[idx].pagos = [];
+  gastosExtra[idx].pagos.push({ id: Date.now(), importe, fecha, nota });
+  const totalPagado = gastosExtra[idx].pagos.reduce((a,p)=>a+p.importe, 0);
+  gastosExtra[idx].importeReal = totalPagado;
+  if (totalPagado >= gastosExtra[idx].importe) gastosExtra[idx].estado = 'pagado';
+  localStorage.setItem('wl_gastos_extra', JSON.stringify(gastosExtra));
+  saveAll();
+  closeModal('modalPagoParcial');
   renderGastosExtra();
 }
 
@@ -10687,33 +10693,16 @@ function renderGastosExtra() {
         '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + e.categoria + '</div>' +
         '<div style="font-size:12px">' + new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES') + '</div>' +
-        '<div>' +
-        '<div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
-        (e.pagadoParcial > 0 ? '<div style="font-size:10px;color:var(--green)">Pagado: ' + fmt(e.pagadoParcial) + ' · Pendiente: ' + fmt(Math.max(0,e.importe-e.pagadoParcial)) + '</div>' : '') +
-        '<div style="background:var(--surface2);border-radius:3px;height:4px;margin-top:3px;overflow:hidden"><div style="height:4px;background:var(--green);width:' + (e.importe>0?Math.min(100,Math.round((e.pagadoParcial||0)/e.importe*100)):0) + '%;border-radius:3px"></div></div>' +
+        '<div><div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
+        (e.importeReal && e.importeReal !== e.importe ? '<div style="font-size:10px;color:' + (e.importeReal>e.importe?'var(--red)':'var(--green)') + '">Real: ' + fmt(e.importeReal) + '</div>' : '') +
         '</div>' +
         '<div><span style="padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;background:' + st.bg + ';color:' + st.color + '">' + st.txt + '</span></div>' +
         '<div style="display:flex;gap:4px">' +
-        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Registrar pago" onclick="abrirPagoParcial(' + e.id + ')">💳</button>' +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openModalExtra(' + e.id + ')">✏️</button>' +
+        (e.estado === 'pendiente' ? '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--green);color:var(--green)" onclick="abrirPagoParcial(' + e.id + ')" title="Registrar pago a cuenta">💳</button>' : '') +
         '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteExtra(' + e.id + ')">🗑</button>' +
         '</div></div>' + cuotasHtml + '</div>';
     }).join('') + '</div>';
-}
-
-function abrirPagoParcial(id) {
-  const e = gastosExtra.find(x => x.id === id);
-  if (!e) return;
-  const pagado = e.pagadoParcial || 0;
-  const pendiente = Math.max(0, e.importe - pagado);
-  const val = prompt('Registrar pago para: ' + e.desc + '\nTotal: ' + fmt(e.importe) + '\nYa pagado: ' + fmt(pagado) + '\nPendiente: ' + fmt(pendiente) + '\n\nImporte a pagar ahora:', pendiente);
-  if (val === null) return;
-  const num = parseFloat(String(val).replace(',','.'));
-  if (isNaN(num) || num <= 0) return alert('Importe no válido');
-  e.pagadoParcial = pagado + num;
-  if (e.pagadoParcial >= e.importe) { e.pagadoParcial = e.importe; e.estado = 'pagado'; }
-  saveAll();
-  renderGastosExtra();
 }
 
 // ===== THEME SYSTEM =====
@@ -11036,12 +11025,13 @@ function renderEfectivo() {
   if (!el) return;
 
   const fmt = n => n.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '\u00a0€';
-  const txEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
-  const txIngEfectivo = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
+  const txEfectivoGasto = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
+  const txEfectivoIngreso = (typeof transactions !== 'undefined' ? transactions : []).filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
 
   const mesesSet = new Set([
-    ...txIngEfectivo.map(t => t.fecha.substring(0, 7)),
-    ...txEfectivo.map(t => t.fecha.substring(0, 7)),
+    ...retiradaEfectivo.map(r => r.mes),
+    ...txEfectivoGasto.map(t => t.fecha.substring(0, 7)),
+    ...txEfectivoIngreso.map(t => t.fecha.substring(0, 7)),
     ...gastosEfectivoLocal.map(g => g.mes)
   ]);
 
@@ -11061,10 +11051,11 @@ function renderEfectivo() {
   let carry = 0;
   for (const mes of mesesAsc) {
     saldoInicialMes[mes] = carry;
-    const ingTx = txIngEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
-    const gastoTx = txEfectivo.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
+    const ret = retiradaEfectivo.filter(r => r.mes === mes).reduce((s, r) => s + r.importe, 0);
+    const ingTx = txEfectivoIngreso.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
+    const gastoTx = txEfectivoGasto.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
     const gastoLocal = gastosEfectivoLocal.filter(g => g.mes === mes).reduce((s, g) => s + g.importe, 0);
-    carry = Math.max(0, saldoInicialMes[mes] + ingTx - gastoTx - gastoLocal);
+    carry = Math.max(0, saldoInicialMes[mes] + ret + ingTx - gastoTx - gastoLocal);
   }
 
   el.innerHTML = meses.map((mes, idx) => {
@@ -11072,15 +11063,17 @@ function renderEfectivo() {
     const mesLabel = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     const mesLabelCap = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1);
 
-    const ingMes = txIngEfectivo.filter(t => t.fecha.startsWith(mes));
-    const totalIngresado = ingMes.reduce((s, t) => s + t.importe, 0);
-    const txMes = txEfectivo.filter(t => t.fecha.startsWith(mes));
+    const retiradas = retiradaEfectivo.filter(r => r.mes === mes);
+    const totalRetirado = retiradas.reduce((s, r) => s + r.importe, 0);
+    const txMes = txEfectivoGasto.filter(t => t.fecha.startsWith(mes));
+    const txIngresosMes = txEfectivoIngreso.filter(t => t.fecha.startsWith(mes));
     const gastosLocalesMes = gastosEfectivoLocal.filter(g => g.mes === mes);
     const totalGastadoTx = txMes.reduce((s, t) => s + t.importe, 0);
     const totalGastadoLocal = gastosLocalesMes.reduce((s, g) => s + g.importe, 0);
+    const totalIngresosEfectivo = txIngresosMes.reduce((s, t) => s + t.importe, 0);
     const totalGastado = totalGastadoTx + totalGastadoLocal;
     const anterior = saldoInicialMes[mes] || 0;
-    const disponible = anterior + totalIngresado;
+    const disponible = anterior + totalRetirado + totalIngresosEfectivo;
     const saldoFinal = disponible - totalGastado;
     const pctGastado = disponible > 0 ? Math.min(100, Math.round(totalGastado / disponible * 100)) : 0;
     const colorSaldo = saldoFinal >= 0 ? 'var(--green)' : 'var(--red)';
@@ -11105,9 +11098,9 @@ function renderEfectivo() {
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Ingresado efectivo</div>
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalIngresado)}</div>
-          ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} del mes anterior</div>` : ''}
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Retirado</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado)}</div>
+          ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} de mes anterior</div>` : ''}
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Gastado</div>
@@ -11124,11 +11117,15 @@ function renderEfectivo() {
         <div style="height:6px;background:${barColor};width:${pctGastado}%;border-radius:4px"></div>
       </div>` : ''}
 
-      ${ingMes.length > 0 ? `<div style="margin-bottom:12px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Ingresos en efectivo</div>
-        ${ingMes.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
-          <span style="color:var(--text)">${t.desc}</span>
-          <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(t.importe)}</span>
+      ${retiradas.length > 0 ? `<div style="margin-bottom:12px">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Retiradas del cajero</div>
+        ${retiradas.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
+          <span style="color:var(--text)">${r.desc}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(r.importe)}</span>
+            <button onclick="editarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Editar">✏️</button>
+            <button onclick="eliminarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Eliminar">✕</button>
+          </div>
         </div>`).join('')}
       </div>` : ''}
 
@@ -11191,9 +11188,7 @@ function renderCierre() {
   setEl('cierre-gastos', fmt(gastos), 'var(--red)');
   setEl('cierre-ahorro', fmt(ahorro), ahorro>=0?'var(--green)':'var(--red)');
   setEl('cierre-ahorro-pct', `Tasa de ahorro: ${ahorroP}%`);
-  const catsMes = {};
-  txMes.filter(t=>t.tipo==='Gasto').forEach(t => { catsMes[t.cat] = (catsMes[t.cat]||0) + t.importe; });
-  const totalBudget = Object.keys(catsMes).reduce((a,cat) => a + (budgets[cat]||0), 0);
+  const totalBudget = Object.values(budgets).reduce((a,b)=>a+b,0);
   const diffBudget  = totalBudget - gastos;
   setEl('cierre-vs-budget', fmt(Math.abs(diffBudget)), diffBudget>=0?'var(--green)':'var(--red)');
   setEl('cierre-vs-budget-sub', diffBudget>=0 ? `${fmt(diffBudget)} por debajo del presupuesto` : `${fmt(-diffBudget)} por encima del presupuesto`);
@@ -11203,7 +11198,8 @@ function renderCierre() {
   if (cats) {
     const catData = {};
     txMes.filter(t=>t.tipo==='Gasto').forEach(t => { catData[t.cat] = (catData[t.cat]||0) + t.importe; });
-    const allCats = [...new Set([...Object.keys(budgets), ...Object.keys(catData)])].sort();
+    // Solo mostrar categorías con gasto real en el mes
+    const allCats = Object.keys(catData).sort();
     cats.innerHTML = `<div style="padding:0 22px">` + allCats.map(cat => {
       const real = catData[cat] || 0;
       const bud  = budgets[cat] || 0;
