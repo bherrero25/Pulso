@@ -3058,7 +3058,7 @@
       </div>
     </div>
 
-    <div class="grid-2">
+    <div style="margin-bottom:18px">
       <div class="card">
         <div class="card-header">
           <div class="card-title">Fondos de Inversión</div>
@@ -3375,13 +3375,6 @@
         </div>
       </div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Distribución Cartera</div></div>
-        <div class="card-body">
-          <div class="chart-wrap" style="height:200px"><canvas id="chartFunds" style="box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas></div>
-          <div id="legendFunds" style="margin-top:12px;"><div class="legend-item"><div class="legend-dot" style="background:#8b6914"></div><span style="font-size:12px">Pictet - Robotics P EUR</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a5c"></div><span style="font-size:12px">Vanguard Global Stock Index Inv EUR</span><span class="legend-pct">6%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d5a8a"></div><span style="font-size:12px">Vanguard Global Small-Cap Index Fund EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#9b3535"></div><span style="font-size:12px">Magallanes Value Investors UCITS European Equity R</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a5c8b"></div><span style="font-size:12px">T. Rowe Price Funds SICAV - US Smaller Companies E</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#b8901f"></div><span style="font-size:12px">Bellevue Funds Lux BB Adamant Medtech B EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#2d6b5e"></div><span style="font-size:12px">MFS Meridian Funds - Prudent Wealth Fund A1 EUR</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a3d3d"></div><span style="font-size:12px">Flossbach von Storch - Multiple Opportunities II E</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c6b8b"></div><span style="font-size:12px">Pictet-Water P EUR</span><span class="legend-pct">3%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b7a3d"></div><span style="font-size:12px">Fundsmith Equity Fund Feeder T EUR Acc</span><span class="legend-pct">4%</span></div><div class="legend-item"><div class="legend-dot" style="background:#4a7a6b"></div><span style="font-size:12px">DPAM INVEST B - Equities NewGems Sustainable B Cap</span><span class="legend-pct">5%</span></div><div class="legend-item"><div class="legend-dot" style="background:#6b3d7a"></div><span style="font-size:12px">Robeco Global Consumer Trends Equities D €</span><span class="legend-pct">7%</span></div><div class="legend-item"><div class="legend-dot" style="background:#8b5c3d"></div><span style="font-size:12px">Fidelity Funds - Global Technology Fund A-Acc-EUR</span><span class="legend-pct">10%</span></div><div class="legend-item"><div class="legend-dot" style="background:#3d7a4a"></div><span style="font-size:12px">Seilern Stryx World Growth EUR U</span><span class="legend-pct">9%</span></div><div class="legend-item"><div class="legend-dot" style="background:#7a6b3d"></div><span style="font-size:12px">Amundi Index Solutions   Amundi Index MSCI World A</span><span class="legend-pct">13%</span></div><div class="legend-item"><div class="legend-dot" style="background:#5c3d7a"></div><span style="font-size:12px">Amundi Index Solutions - Amundi Index MSCI Emergin</span><span class="legend-pct">2%</span></div></div>
-        </div>
-      </div>
     </div>
 
     <!-- HISTÓRICO CARTERA -->
@@ -3556,6 +3549,9 @@
       </div>
     </div>
   </div>
+  <!-- canvas oculto para compatibilidad JS -->
+  <canvas id="chartFunds" style="display:none"></canvas>
+  <div id="legendFunds" style="display:none"></div>
 
   <!-- TESORERÍA -->
   <div class="tab-content" id="tab-tesoreria">
