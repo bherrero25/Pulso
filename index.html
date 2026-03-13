@@ -4814,10 +4814,7 @@
         -4.1%
       </span>
     </div></div>
-          <div style="margin-top:12px;padding:12px 20px 16px;border-top:1px solid var(--border)">
-            <div class="card-title" style="margin-bottom:12px">Distribución por Gestora</div>
-            <canvas id="chartGestoras" style="max-height: 180px; box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas>
-          </div>
+
         </div>
       </div>
 
@@ -7990,6 +7987,15 @@ let historicoCierres    = JSON.parse(localStorage.getItem('wl_cierres') || '[]')
 let agendaEventos       = JSON.parse(localStorage.getItem('wl_agenda')  || '[]');
 let bonusAnual          = JSON.parse(localStorage.getItem('wl_bonus')   || '[]');
 
+// Migración: eventos viaje/evento sin fechaInicio/fechaFin → copiar desde fecha
+agendaEventos = agendaEventos.map(e => {
+  if ((e.tipo === 'viaje' || e.tipo === 'evento') && e.fecha && !e.fechaInicio) {
+    return { ...e, fechaInicio: e.fecha, fechaFin: e.fechaFin || e.fecha };
+  }
+  return e;
+});
+localStorage.setItem('wl_agenda', JSON.stringify(agendaEventos));
+
 if (!cargarDatosIncrustados()) {
   cargarDesdeLocalStorage();
 }
@@ -9894,7 +9900,7 @@ function renderEvolucionSaldo() {
 }
 
 // ===== ANÁLISIS: TIR Y GESTORAS =====
-let chartGestoras = null;
+
 
 function calcTIR(coste, valor, años) {
   if (!coste || !valor || coste <= 0) return null;
@@ -9979,27 +9985,6 @@ function renderGestoras() {
     </div>`;
   }).join('');
 
-  // Donut chart
-  if (chartGestoras) chartGestoras.destroy();
-  const ctx = document.getElementById('chartGestoras');
-  if (!ctx) return;
-  const totalVal = funds.reduce((a,b)=>a+b.valor,0);
-  chartGestoras = new Chart(ctx.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: sorted.map(g => g.nombre),
-      datasets: [{ data: sorted.map(g => g.valor), backgroundColor: COLORS.slice(0, sorted.length), borderWidth: 0, hoverOffset: 6 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'right', labels: { color: 'var(--muted)', font: { size: 10 }, boxWidth: 10,
-        generateLabels: chart => chart.data.labels.map((label, i) => ({
-          text: `${label} (${Math.round(chart.data.datasets[0].data[i]/totalVal*100)}%)`,
-          fillStyle: COLORS[i], hidden: false, index: i
-        }))
-      }}}
-    }
-  });
 }
 
 // ===== CALCULADORA OBJETIVOS =====
@@ -11295,7 +11280,7 @@ function renderEfectivo() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Retirado</div>
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado)}</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado + totalIngresosEfectivo)}</div>
           ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} de mes anterior</div>` : ''}
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
@@ -11313,7 +11298,7 @@ function renderEfectivo() {
         <div style="height:6px;background:${barColor};width:${pctGastado}%;border-radius:4px"></div>
       </div>` : ''}
 
-      ${retiradas.length > 0 ? `<div style="margin-bottom:12px">
+      ${(retiradas.length > 0 || txIngresosMes.length > 0) ? `<div style="margin-bottom:12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Retiradas del cajero</div>
         ${retiradas.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
           <span style="color:var(--text)">${r.desc}</span>
@@ -11322,6 +11307,10 @@ function renderEfectivo() {
             <button onclick="editarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Editar">✏️</button>
             <button onclick="eliminarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Eliminar">✕</button>
           </div>
+        </div>`).join('')}
+        ${txIngresosMes.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
+          <span style="color:var(--text)">${t.desc}</span>
+          <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(t.importe)}</span>
         </div>`).join('')}
       </div>` : ''}
 
@@ -11442,11 +11431,11 @@ function renderRecurrentes(mes) {
 
   const grupos = {};
   transactions.filter(t=>t.tipo==='Gasto').forEach(t => {
-    const key = t.desc.toLowerCase().trim().substring(0,30);
+    const key = t.cat ? 'cat:' + t.cat.toLowerCase().trim() : t.desc.toLowerCase().trim().substring(0,30);
     const mesT = t.fecha.substring(0,7);
-    if (!grupos[key]) grupos[key] = { desc: t.desc, cat: t.cat, porMes: {} };
+    if (!grupos[key]) grupos[key] = { desc: t.cat || t.desc, cat: t.cat, porMes: {} };
     if (!grupos[key].porMes[mesT]) grupos[key].porMes[mesT] = 0;
-    grupos[key].porMes[mesT] += t.importe; // acumular total del mes, no por transacción
+    grupos[key].porMes[mesT] += t.importe;
   });
 
   const recurrentes = Object.values(grupos)
@@ -11708,10 +11697,12 @@ function renderAgenda() {
   const diasMes    = new Date(y, m, 0).getDate();
   const offset     = (primerDia + 6) % 7; // lunes=0
   const eventosMes = agendaEventos.filter(e => {
-    if ((e.tipo === "viaje" || e.tipo === "evento") && e.fechaInicio && e.fechaFin) {
-      return e.fechaInicio.substring(0,7) <= agendaMesActual && e.fechaFin.substring(0,7) >= agendaMesActual;
+    const fi = e.fechaInicio || e.fecha;
+    const ff = e.fechaFin    || e.fecha;
+    if ((e.tipo === 'viaje' || e.tipo === 'evento') && fi && ff) {
+      return fi.substring(0,7) <= agendaMesActual && ff.substring(0,7) >= agendaMesActual;
     }
-    return e.fecha.startsWith(agendaMesActual);
+    return (e.fecha || '').startsWith(agendaMesActual);
   });
 
   // Calendrio
@@ -11738,21 +11729,27 @@ function renderAgenda() {
 
     // Eventos punto (sin rango)
     const evsDia = eventosMes.filter(e => {
-      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && e.fechaInicio && e.fechaFin;
-      return !tieneRango && e.fecha === fechaStr;
+      const fi = e.fechaInicio || e.fecha;
+      const ff = e.fechaFin    || e.fecha;
+      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && fi && ff && fi !== ff;
+      return !tieneRango && (e.fecha === fechaStr || (!e.fecha && fi === fechaStr));
     });
 
     // Eventos con rango que incluyen este día
     const evsRango = eventosMes.filter(e => {
-      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && e.fechaInicio && e.fechaFin;
-      return tieneRango && e.fechaInicio <= fechaStr && e.fechaFin >= fechaStr;
+      const fi = e.fechaInicio || e.fecha;
+      const ff = e.fechaFin    || e.fecha;
+      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && fi && ff;
+      return tieneRango && fi <= fechaStr && ff >= fechaStr;
     });
 
     cal += `<div class="cal-day${esHoy?' hoy':''}">
       <div class="cal-day-num">${d}</div>
       ${evsRango.map(e => {
-        const esInicio = e.fechaInicio === fechaStr;
-        const esFin    = e.fechaFin    === fechaStr;
+        const fi = e.fechaInicio || e.fecha;
+        const ff = e.fechaFin    || e.fecha;
+        const esInicio = fi === fechaStr;
+        const esFin    = ff === fechaStr;
         const posClass = esInicio ? 'cal-rango-inicio' : esFin ? 'cal-rango-fin' : 'cal-rango-medio';
         const label    = esInicio ? `${AGENDA_TIPO[e.tipo]?.emoji||'✈️'} ${e.desc}`
                        : esFin    ? `✦ hasta aquí`
