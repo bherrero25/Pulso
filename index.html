@@ -11715,6 +11715,19 @@ function renderAgenda() {
   });
 
   // Calendrio
+  // Inyectar estilos para eventos de rango (solo una vez)
+  if (!document.getElementById('cal-rango-style')) {
+    const st = document.createElement('style');
+    st.id = 'cal-rango-style';
+    st.textContent = `
+      .cal-evento-viaje  { background:rgba(108,63,196,0.15);color:#6c3fc4; }
+      .cal-rango-inicio  { border-radius:4px 0 0 4px !important; }
+      .cal-rango-medio   { border-radius:0 !important; opacity:0.7; }
+      .cal-rango-fin     { border-radius:0 4px 4px 0 !important; opacity:0.7; }
+    `;
+    document.head.appendChild(st);
+  }
+
   const dias = ['L','M','X','J','V','S','D'];
   let cal = `<div class="cal-grid">`;
   dias.forEach(d => cal += `<div class="cal-header">${d}</div>`);
@@ -11722,9 +11735,30 @@ function renderAgenda() {
   for (let d = 1; d <= diasMes; d++) {
     const fechaStr = `${agendaMesActual}-${String(d).padStart(2,'0')}`;
     const esHoy    = new Date(fechaStr+'T00:00:00').getTime() === hoy.getTime();
-    const evsDia   = eventosMes.filter(e => e.fecha === fechaStr);
+
+    // Eventos punto (sin rango)
+    const evsDia = eventosMes.filter(e => {
+      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && e.fechaInicio && e.fechaFin;
+      return !tieneRango && e.fecha === fechaStr;
+    });
+
+    // Eventos con rango que incluyen este día
+    const evsRango = eventosMes.filter(e => {
+      const tieneRango = (e.tipo==='viaje'||e.tipo==='evento') && e.fechaInicio && e.fechaFin;
+      return tieneRango && e.fechaInicio <= fechaStr && e.fechaFin >= fechaStr;
+    });
+
     cal += `<div class="cal-day${esHoy?' hoy':''}">
       <div class="cal-day-num">${d}</div>
+      ${evsRango.map(e => {
+        const esInicio = e.fechaInicio === fechaStr;
+        const esFin    = e.fechaFin    === fechaStr;
+        const posClass = esInicio ? 'cal-rango-inicio' : esFin ? 'cal-rango-fin' : 'cal-rango-medio';
+        const label    = esInicio ? `${AGENDA_TIPO[e.tipo]?.emoji||'✈️'} ${e.desc}`
+                       : esFin    ? `✦ hasta aquí`
+                       : `·`;
+        return `<div class="cal-evento cal-evento-${e.tipo} ${posClass}" onclick="openModalAgenda(${e.id})" title="${e.desc}">${label}</div>`;
+      }).join('')}
       ${evsDia.map(e => `<div class="cal-evento cal-evento-${e.tipo}${e.estado==='hecho'?' cal-evento-hecho':''}" onclick="openModalAgenda(${e.id})" title="${e.desc}">
         ${AGENDA_TIPO[e.tipo]?.emoji || '📝'} ${e.desc}
       </div>`).join('')}
