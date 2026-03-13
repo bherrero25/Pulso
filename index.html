@@ -4814,10 +4814,7 @@
         -4.1%
       </span>
     </div></div>
-          <div style="margin-top:12px;padding:12px 20px 16px;border-top:1px solid var(--border)">
-            <div class="card-title" style="margin-bottom:12px">Distribución por Gestora</div>
-            <canvas id="chartGestoras" style="max-height: 180px; box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas>
-          </div>
+
         </div>
       </div>
 
@@ -5786,6 +5783,7 @@
             <option value="pago">💳 Pagos</option>
             <option value="cita">🏥 Citas</option>
             <option value="evento">🎉 Eventos</option>
+            <option value="viaje">✈️ Viajes</option>
             <option value="nota">📝 Notas</option>
           </select>
         </div>
@@ -6929,17 +6927,30 @@
     <input type="hidden" id="ag-edit-id">
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Fecha</label>
-        <input type="date" class="form-input" id="ag-fecha">
-      </div>
-      <div class="form-group">
         <label class="form-label">Tipo</label>
-        <select class="form-input" id="ag-tipo">
+        <select class="form-input" id="ag-tipo" onchange="toggleAgendaFechas()">
           <option value="pago">💳 Pago / Factura</option>
           <option value="cita">🏥 Cita / Gestión</option>
           <option value="evento">🎉 Evento con gasto</option>
+          <option value="viaje">✈️ Viaje</option>
           <option value="nota">📝 Nota financiera</option>
         </select>
+      </div>
+      <div class="form-group" id="ag-fecha-unica-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="ag-fecha">
+      </div>
+    </div>
+    <div id="ag-fechas-rango-group" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha inicio</label>
+          <input type="date" class="form-input" id="ag-fecha-inicio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha fin</label>
+          <input type="date" class="form-input" id="ag-fecha-fin">
+        </div>
       </div>
     </div>
     <div class="form-group">
@@ -7273,6 +7284,37 @@
     <div class="form-group">
       <label class="form-label">Notas (vuelos, hotel...)</label>
       <input type="text" class="form-input" id="vj-notas" placeholder="Vuelo Ryanair FR1234, Hotel NH...">
+    </div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin:14px 0 8px">Desglose de gastos (€)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">✈️ Vuelos</label>
+        <input type="number" class="form-input" id="vj-vuelos" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🏨 Alojamiento</label>
+        <input type="number" class="form-input" id="vj-alojamiento" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🍽️ Comidas</label>
+        <input type="number" class="form-input" id="vj-comidas" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🚌 Transporte</label>
+        <input type="number" class="form-input" id="vj-transporte" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🎭 Ocio</label>
+        <input type="number" class="form-input" id="vj-ocio" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">📦 Otros</label>
+        <input type="number" class="form-input" id="vj-otros" placeholder="0">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal(&#39;modalViaje&#39;)">Cancelar</button>
@@ -9904,27 +9946,6 @@ function renderGestoras() {
     </div>`;
   }).join('');
 
-  // Donut chart
-  if (chartGestoras) chartGestoras.destroy();
-  const ctx = document.getElementById('chartGestoras');
-  if (!ctx) return;
-  const totalVal = funds.reduce((a,b)=>a+b.valor,0);
-  chartGestoras = new Chart(ctx.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: sorted.map(g => g.nombre),
-      datasets: [{ data: sorted.map(g => g.valor), backgroundColor: COLORS.slice(0, sorted.length), borderWidth: 0, hoverOffset: 6 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'right', labels: { color: 'var(--muted)', font: { size: 10 }, boxWidth: 10,
-        generateLabels: chart => chart.data.labels.map((label, i) => ({
-          text: `${label} (${Math.round(chart.data.datasets[0].data[i]/totalVal*100)}%)`,
-          fillStyle: COLORS[i], hidden: false, index: i
-        }))
-      }}}
-    }
-  });
 }
 
 // ===== CALCULADORA OBJETIVOS =====
@@ -10146,8 +10167,8 @@ function renderSeguros() {
     const noRenovar = s.renovacion === 'no';
 
     if (dias < 0) {
-      // Vencido
-      alertas.push({ s, dias, tipo: 'vencido' });
+      // Vencido — si tiene renovación automática, calcular nueva fecha y mostrar como renovado
+      alertas.push({ s, dias, tipo: s.renovacion === 'si' ? 'renovado-auto' : 'vencido' });
     } else if (noRenovar && dias <= 60) {
       // No quiere renovar y quedan menos de 60 días → hay que avisar a la aseguradora YA
       alertas.push({ s, dias, tipo: 'cancelar' });
@@ -10160,7 +10181,14 @@ function renderSeguros() {
   if (alertas.length > 0) {
     alertasEl.innerHTML = alertas.map(({ s, dias, tipo }) => {
       let bg, border, icono, titulo, subtitulo;
-      if (tipo === 'vencido') {
+      if (tipo === 'renovado-auto') {
+        const dRenovada = new Date(s.vencimiento + 'T00:00:00');
+        dRenovada.setFullYear(dRenovada.getFullYear() + 1);
+        bg = 'rgba(40,120,80,0.07)'; border = 'rgba(40,120,80,0.25)';
+        icono = '🔄';
+        titulo = `<strong>${s.nombre}</strong> — Renovado automáticamente`;
+        subtitulo = `${s.aseguradora || ''} · Prima: ${fmt(s.prima)} · Próximo vencimiento: ${dRenovada.toLocaleDateString('es-ES')}`;
+      } else if (tipo === 'vencido') {
         bg = 'rgba(155,53,53,0.08)'; border = 'rgba(155,53,53,0.3)';
         icono = '🚨';
         titulo = `<strong>${s.nombre}</strong> — Seguro vencido hace ${-dias} días`;
@@ -10206,8 +10234,11 @@ function renderSeguros() {
     ${lista.sort((a,b) => a.vencimiento.localeCompare(b.vencimiento)).map(s => {
       const d = new Date(s.vencimiento + 'T00:00:00');
       const dias = Math.ceil((d - hoy) / (1000*60*60*24));
-      const estadoClass = dias < 0 ? 'var(--red)' : dias <= 30 ? '#b8901f' : 'var(--green)';
-      const estadoTxt = dias < 0 ? `Vencido hace ${-dias}d` : dias === 0 ? 'Vence hoy' : `${dias}d restantes`;
+      const vencidoAutoRenova = dias < 0 && s.renovacion === 'si';
+      const dMostrar = vencidoAutoRenova ? (() => { const nd = new Date(d); nd.setFullYear(nd.getFullYear()+1); return nd; })() : d;
+      const diasMostrar = vencidoAutoRenova ? Math.ceil((dMostrar - hoy) / (1000*60*60*24)) : dias;
+      const estadoClass = vencidoAutoRenova ? 'var(--green)' : dias < 0 ? 'var(--red)' : dias <= 30 ? '#b8901f' : 'var(--green)';
+      const estadoTxt = vencidoAutoRenova ? `🔄 Renovado · ${diasMostrar}d restantes` : dias < 0 ? `Vencido hace ${-dias}d` : dias === 0 ? 'Vence hoy' : `${dias}d restantes`;
       return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 80px;gap:8px;padding:13px 0;border-bottom:1px solid var(--surface2);align-items:center">
         <div>
           <div style="font-size:13px;font-weight:500">${s.nombre}</div>
@@ -10217,7 +10248,7 @@ function renderSeguros() {
         <div style="font-size:12px">${s.aseguradora || '—'}</div>
         <div style="font-family:var(--font-mono);font-size:13px;font-weight:500">${fmt(s.prima)}</div>
         <div>
-          <div style="font-size:12px">${new Date(s.vencimiento + 'T00:00:00').toLocaleDateString('es-ES')}</div>
+          <div style="font-size:12px">${dMostrar.toLocaleDateString('es-ES')}</div>
           <div style="font-size:10px;color:${estadoClass};margin-top:2px">${estadoTxt}</div>
         </div>
         <div style="display:flex;gap:4px">
@@ -10245,9 +10276,16 @@ function openModalViaje(id) {
     document.getElementById('vj-personas').value = v.personas || 1;
     document.getElementById('vj-tipo').value = v.tipo;
     document.getElementById('vj-notas').value = v.notas || '';
+    const g = v.gastos || {};
+    document.getElementById('vj-vuelos').value = g.vuelos || '';
+    document.getElementById('vj-alojamiento').value = g.alojamiento || '';
+    document.getElementById('vj-comidas').value = g.comidas || '';
+    document.getElementById('vj-transporte').value = g.transporte || '';
+    document.getElementById('vj-ocio').value = g.ocio || '';
+    document.getElementById('vj-otros').value = g.otros || '';
   } else {
     document.getElementById('modalViajeTitle').textContent = 'Nuevo Viaje';
-    ['vj-destino','vj-presupuesto-modal','vj-gasto-real','vj-notas'].forEach(id => document.getElementById(id).value = '');
+    ['vj-destino','vj-presupuesto-modal','vj-gasto-real','vj-notas','vj-vuelos','vj-alojamiento','vj-comidas','vj-transporte','vj-ocio','vj-otros'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('vj-personas').value = 1;
     document.getElementById('vj-estado').value = 'planificado';
     document.getElementById('vj-tipo').value = 'Vacaciones';
@@ -10267,7 +10305,15 @@ function saveViaje() {
     gastoReal: parseFloat(document.getElementById('vj-gasto-real').value) || 0,
     personas: parseInt(document.getElementById('vj-personas').value) || 1,
     tipo: document.getElementById('vj-tipo').value,
-    notas: document.getElementById('vj-notas').value.trim()
+    notas: document.getElementById('vj-notas').value.trim(),
+    gastos: {
+      vuelos: parseFloat(document.getElementById('vj-vuelos').value) || 0,
+      alojamiento: parseFloat(document.getElementById('vj-alojamiento').value) || 0,
+      comidas: parseFloat(document.getElementById('vj-comidas').value) || 0,
+      transporte: parseFloat(document.getElementById('vj-transporte').value) || 0,
+      ocio: parseFloat(document.getElementById('vj-ocio').value) || 0,
+      otros: parseFloat(document.getElementById('vj-otros').value) || 0,
+    }
   };
   if (!v.destino) { alert('El destino es obligatorio.'); return; }
   if (id) viajes = viajes.map(x => x.id === parseInt(id) ? v : x);
@@ -10421,6 +10467,17 @@ function renderViajes() {
           <div style="height:100%;width:${pctGasto}%;background:${pctGasto>100?'var(--red)':pctGasto>80?'#b8901f':'var(--green)'};border-radius:2px;transition:width 0.4s"></div>
         </div>` : ''}
         ${v.notas ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;font-style:italic">📝 ${v.notas}</div>` : ''}
+        ${v.gastos && Object.values(v.gastos).some(x=>x>0) ? `
+        <div style="margin-top:14px;border-top:1px solid var(--surface2);padding-top:12px">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:8px">Desglose de gastos</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${[['✈️','Vuelos','vuelos'],['🏨','Alojamiento','alojamiento'],['🍽️','Comidas','comidas'],['🚌','Transporte','transporte'],['🎭','Ocio','ocio'],['📦','Otros','otros']].filter(([,, k]) => v.gastos[k] > 0).map(([emoji, label, k]) => `
+              <div style="background:var(--surface2);border-radius:6px;padding:6px 10px;font-size:11px">
+                <span>${emoji} ${label}</span>
+                <span style="font-family:var(--font-mono);font-weight:600;margin-left:6px">${fmt(v.gastos[k])}</span>
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -11095,7 +11152,7 @@ function renderEfectivo() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Retirado</div>
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado)}</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado + totalIngresosEfectivo)}</div>
           ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} de mes anterior</div>` : ''}
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
@@ -11113,7 +11170,7 @@ function renderEfectivo() {
         <div style="height:6px;background:${barColor};width:${pctGastado}%;border-radius:4px"></div>
       </div>` : ''}
 
-      ${retiradas.length > 0 ? `<div style="margin-bottom:12px">
+      ${retiradas.length > 0 || txIngresosMes.length > 0 ? `<div style="margin-bottom:12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Retiradas del cajero</div>
         ${retiradas.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
           <span style="color:var(--text)">${r.desc}</span>
@@ -11122,6 +11179,10 @@ function renderEfectivo() {
             <button onclick="editarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Editar">✏️</button>
             <button onclick="eliminarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Eliminar">✕</button>
           </div>
+        </div>`).join('')}
+        ${txIngresosMes.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
+          <span style="color:var(--text)">${t.desc}</span>
+          <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(t.importe)}</span>
         </div>`).join('')}
       </div>` : ''}
 
@@ -11242,11 +11303,16 @@ function renderRecurrentes(mes) {
 
   const grupos = {};
   transactions.filter(t=>t.tipo==='Gasto').forEach(t => {
-    const key = t.desc.toLowerCase().trim().substring(0,30);
+    // Agrupar primero por categoría (para que Mensualidad Nico/Dani aparezcan aunque varíe la desc)
+    // y si la categoría aparece sólo una vez, usar la descripción como fallback
+    const keyByCat = 'cat:' + t.cat.toLowerCase().trim();
+    const keyByDesc = t.desc.toLowerCase().trim().substring(0,30);
+    // Preferir la clave por categoría para transacciones con categoría propia
+    const key = keyByCat;
     const mesT = t.fecha.substring(0,7);
     if (!grupos[key]) grupos[key] = { desc: t.desc, cat: t.cat, porMes: {} };
     if (!grupos[key].porMes[mesT]) grupos[key].porMes[mesT] = 0;
-    grupos[key].porMes[mesT] += t.importe; // acumular total del mes, no por transacción
+    grupos[key].porMes[mesT] += t.importe;
   });
 
   const recurrentes = Object.values(grupos)
@@ -11322,8 +11388,16 @@ const AGENDA_TIPO = {
   pago:   { emoji:'💳', label:'Pago',   bg:'rgba(61,122,92,0.12)',   color:'var(--green)' },
   cita:   { emoji:'🏥', label:'Cita',   bg:'rgba(61,90,138,0.12)',   color:'#3d5a8a' },
   evento: { emoji:'🎉', label:'Evento', bg:'rgba(184,144,31,0.12)', color:'var(--accent)' },
+  viaje:  { emoji:'✈️', label:'Viaje',  bg:'rgba(100,60,180,0.10)', color:'#6c3fc4' },
   nota:   { emoji:'📝', label:'Nota',   bg:'rgba(100,100,100,0.08)', color:'var(--muted)' }
 };
+
+function toggleAgendaFechas() {
+  const tipo = document.getElementById('ag-tipo').value;
+  const esViaje = tipo === 'viaje';
+  document.getElementById('ag-fecha-unica-group').style.display = esViaje ? 'none' : '';
+  document.getElementById('ag-fechas-rango-group').style.display = esViaje ? '' : 'none';
+}
 
 function saveAgenda() {
   localStorage.setItem('wl_agenda', JSON.stringify(agendaEventos));
@@ -11335,12 +11409,14 @@ function openModalAgenda(id) {
   if (id) {
     const e = agendaEventos.find(x => x.id === id);
     document.getElementById('modalAgendaTitle').textContent = 'Editar Evento';
-    document.getElementById('ag-fecha').value   = e.fecha;
+    document.getElementById('ag-fecha').value   = e.fecha || '';
     document.getElementById('ag-tipo').value    = e.tipo;
     document.getElementById('ag-desc').value    = e.desc;
     document.getElementById('ag-importe').value = e.importe || '';
     document.getElementById('ag-estado').value  = e.estado;
     document.getElementById('ag-notas').value   = e.notas || '';
+    document.getElementById('ag-fecha-inicio').value = e.fechaInicio || '';
+    document.getElementById('ag-fecha-fin').value    = e.fechaFin || '';
   } else {
     document.getElementById('modalAgendaTitle').textContent = 'Nuevo Evento';
     document.getElementById('ag-fecha').value   = hoy;
@@ -11349,20 +11425,26 @@ function openModalAgenda(id) {
     document.getElementById('ag-importe').value = '';
     document.getElementById('ag-estado').value  = 'pendiente';
     document.getElementById('ag-notas').value   = '';
+    document.getElementById('ag-fecha-inicio').value = '';
+    document.getElementById('ag-fecha-fin').value    = '';
   }
+  toggleAgendaFechas();
   openModal('modalAgenda');
 }
 
 function saveEventoAgenda() {
   const id      = parseInt(document.getElementById('ag-edit-id').value) || null;
-  const fecha   = document.getElementById('ag-fecha').value;
   const tipo    = document.getElementById('ag-tipo').value;
+  const esViaje = tipo === 'viaje';
+  const fecha   = esViaje ? (document.getElementById('ag-fecha-inicio').value || document.getElementById('ag-fecha-fin').value) : document.getElementById('ag-fecha').value;
+  const fechaInicio = esViaje ? document.getElementById('ag-fecha-inicio').value : '';
+  const fechaFin    = esViaje ? document.getElementById('ag-fecha-fin').value : '';
   const desc    = document.getElementById('ag-desc').value.trim();
   const importe = parseFloat(document.getElementById('ag-importe').value) || 0;
   const estado  = document.getElementById('ag-estado').value;
   const notas   = document.getElementById('ag-notas').value.trim();
   if (!fecha || !desc) return alert('Rellena la fecha y descripción.');
-  const evento = { id: id || Date.now(), fecha, tipo, desc, importe, estado, notas };
+  const evento = { id: id || Date.now(), fecha, tipo, desc, importe, estado, notas, ...(esViaje && { fechaInicio, fechaFin }) };
   if (id) {
     const idx = agendaEventos.findIndex(e => e.id === id);
     if (idx >= 0) agendaEventos[idx] = evento;
@@ -11487,7 +11569,12 @@ function renderAgenda() {
   const primerDia  = new Date(y, m-1, 1).getDay(); // 0=dom
   const diasMes    = new Date(y, m, 0).getDate();
   const offset     = (primerDia + 6) % 7; // lunes=0
-  const eventosMes = agendaEventos.filter(e => e.fecha.startsWith(agendaMesActual));
+  const eventosMes = agendaEventos.filter(e => {
+    if (e.tipo === 'viaje' && e.fechaInicio && e.fechaFin) {
+      return e.fechaInicio.substring(0,7) <= agendaMesActual && e.fechaFin.substring(0,7) >= agendaMesActual;
+    }
+    return e.fecha.startsWith(agendaMesActual);
+  });
 
   // Calendrio
   const dias = ['L','M','X','J','V','S','D'];
@@ -11520,13 +11607,16 @@ function renderAgenda() {
   }
   listaEl.innerHTML = eventos.map(e => {
     const t     = AGENDA_TIPO[e.tipo] || AGENDA_TIPO.nota;
-    const fecha = new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+    const esViaje = e.tipo === 'viaje' && e.fechaInicio && e.fechaFin;
+    const fechaLabel = esViaje
+      ? `${new Date(e.fechaInicio+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})} → ${new Date(e.fechaFin+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}`
+      : new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'short'});
     const hecho = e.estado === 'hecho';
     return `<div class="agenda-row" style="${hecho?'opacity:0.5':''}">
       <div class="agenda-tipo-badge" style="background:${t.bg}">${t.emoji}</div>
       <div>
         <div style="font-size:13px;font-weight:500${hecho?';text-decoration:line-through':''}">${e.desc}</div>
-        <div style="font-size:11px;color:var(--muted)">${fecha} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
+        <div style="font-size:11px;color:var(--muted)">${fechaLabel} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
       </div>
       <div style="display:flex;gap:4px">
         <button onclick="toggleEstadoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" title="${hecho?'Marcar pendiente':'Marcar hecho'}">${hecho?'↩':'✓'}</button>
