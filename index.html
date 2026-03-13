@@ -4814,7 +4814,10 @@
         -4.1%
       </span>
     </div></div>
-
+          <div style="margin-top:12px;padding:12px 20px 16px;border-top:1px solid var(--border)">
+            <div class="card-title" style="margin-bottom:12px">Distribución por Gestora</div>
+            <canvas id="chartGestoras" style="max-height: 180px; box-sizing: border-box; display: block; height: 0px; width: 0px;" width="0" height="0"></canvas>
+          </div>
         </div>
       </div>
 
@@ -6931,17 +6934,17 @@
         <select class="form-input" id="ag-tipo" onchange="toggleAgendaFechas()">
           <option value="pago">💳 Pago / Factura</option>
           <option value="cita">🏥 Cita / Gestión</option>
-          <option value="evento">🎉 Evento con gasto</option>
+          <option value="evento">🎉 Evento</option>
           <option value="viaje">✈️ Viaje</option>
-          <option value="nota">📝 Nota financiera</option>
+          <option value="nota">📝 Nota</option>
         </select>
       </div>
-      <div class="form-group" id="ag-fecha-unica-group">
+      <div class="form-group" id="ag-grupo-fecha-simple">
         <label class="form-label">Fecha</label>
         <input type="date" class="form-input" id="ag-fecha">
       </div>
     </div>
-    <div id="ag-fechas-rango-group" style="display:none">
+    <div id="ag-grupo-fechas-rango" style="display:none">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Fecha inicio</label>
@@ -6955,7 +6958,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Descripción</label>
-      <input type="text" class="form-input" id="ag-desc" placeholder="Ej: Revisión coche, Cumple de Ana...">
+      <input type="text" class="form-input" id="ag-desc" placeholder="Ej: Menorca, Revisión coche...">
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -7227,13 +7230,13 @@
 
 <!-- MODAL: VIAJE -->
 <div class="modal-overlay" id="modalViaje">
-  <div class="modal" style="width:500px">
+  <div class="modal" style="width:620px;max-width:96vw;max-height:90vh;overflow-y:auto">
     <div class="modal-title" id="modalViajeTitle">Nuevo Viaje</div>
     <input type="hidden" id="vj-edit-id" value="">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Destino</label>
-        <input type="text" class="form-input" id="vj-destino" placeholder="Ej: Lisboa, París...">
+        <input type="text" class="form-input" id="vj-destino" placeholder="Ej: Grecia, Lisboa...">
       </div>
       <div class="form-group">
         <label class="form-label">Estado</label>
@@ -7261,15 +7264,11 @@
         <input type="number" class="form-input" id="vj-presupuesto-modal" placeholder="0">
       </div>
       <div class="form-group">
-        <label class="form-label">Gasto Real (€)</label>
-        <input type="number" class="form-input" id="vj-gasto-real" placeholder="0">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
         <label class="form-label">Personas</label>
         <input type="number" class="form-input" id="vj-personas" value="1" min="1">
       </div>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Tipo</label>
         <select class="form-input" id="vj-tipo">
@@ -7280,45 +7279,79 @@
           <option>Familiar</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">Notas generales</label>
+        <input type="text" class="form-input" id="vj-notas" placeholder="Comentarios del viaje...">
+      </div>
+    </div>
+
+    <!-- GESTOR DE ELEMENTOS POR CATEGORÍA -->
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500">Detalle por categoría</div>
+        <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="abrirModalElementoViaje()">+ Añadir elemento</button>
+      </div>
+      <div id="vj-elementos-lista" style="min-height:40px"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalViaje')">Cancelar</button>
+      <button class="btn btn-gold" onclick="saveViaje()">Guardar viaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ELEMENTO DE VIAJE (vuelo, hotel, comida...) -->
+<div class="modal-overlay" id="modalElementoViaje">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <div class="modal-title" id="modalElementoViajeTitle">Añadir elemento</div>
+    <input type="hidden" id="vj-el-idx" value="">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="vj-el-cat">
+          <option value="vuelo">✈️ Vuelo</option>
+          <option value="alojamiento">🏨 Alojamiento</option>
+          <option value="comida">🍽️ Comida / Restaurante</option>
+          <option value="transporte">🚌 Transporte</option>
+          <option value="ocio">🎭 Ocio / Actividad</option>
+          <option value="otro">📦 Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio (€)</label>
+        <input type="number" class="form-input" id="vj-el-precio" placeholder="0" step="0.01">
+      </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Notas (vuelos, hotel...)</label>
-      <input type="text" class="form-input" id="vj-notas" placeholder="Vuelo Ryanair FR1234, Hotel NH...">
-    </div>
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin:14px 0 8px">Desglose de gastos (€)</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">✈️ Vuelos</label>
-        <input type="number" class="form-input" id="vj-vuelos" placeholder="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">🏨 Alojamiento</label>
-        <input type="number" class="form-input" id="vj-alojamiento" placeholder="0">
-      </div>
+      <label class="form-label">Descripción</label>
+      <input type="text" class="form-input" id="vj-el-desc" placeholder="Ej: Vuelo MAD-ATH Ryanair, Hotel Acropolis...">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">🍽️ Comidas</label>
-        <input type="number" class="form-input" id="vj-comidas" placeholder="0">
+        <label class="form-label">Fecha / Hora <span style="color:var(--muted);font-size:10px">opcional</span></label>
+        <input type="text" class="form-input" id="vj-el-fecha" placeholder="Ej: 01/08 a las 07:30">
       </div>
       <div class="form-group">
-        <label class="form-label">🚌 Transporte</label>
-        <input type="number" class="form-input" id="vj-transporte" placeholder="0">
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="vj-el-estado">
+          <option value="pendiente">Pendiente reservar</option>
+          <option value="reservado">Reservado ✓</option>
+          <option value="pagado">Pagado ✓</option>
+        </select>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">🎭 Ocio</label>
-        <input type="number" class="form-input" id="vj-ocio" placeholder="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">📦 Otros</label>
-        <input type="number" class="form-input" id="vj-otros" placeholder="0">
-      </div>
+    <div class="form-group">
+      <label class="form-label">Link de reserva <span style="color:var(--muted);font-size:10px">opcional</span></label>
+      <input type="text" class="form-input" id="vj-el-link" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas <span style="color:var(--muted);font-size:10px">opcional</span></label>
+      <input type="text" class="form-input" id="vj-el-notas" placeholder="Nº reserva, confirmación, detalles...">
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;modalViaje&#39;)">Cancelar</button>
-      <button class="btn btn-gold" onclick="saveViaje()">Guardar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalElementoViaje')">Cancelar</button>
+      <button class="btn btn-gold" onclick="saveElementoViaje()">Guardar</button>
     </div>
   </div>
 </div>
@@ -9946,6 +9979,27 @@ function renderGestoras() {
     </div>`;
   }).join('');
 
+  // Donut chart
+  if (chartGestoras) chartGestoras.destroy();
+  const ctx = document.getElementById('chartGestoras');
+  if (!ctx) return;
+  const totalVal = funds.reduce((a,b)=>a+b.valor,0);
+  chartGestoras = new Chart(ctx.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(g => g.nombre),
+      datasets: [{ data: sorted.map(g => g.valor), backgroundColor: COLORS.slice(0, sorted.length), borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { position: 'right', labels: { color: 'var(--muted)', font: { size: 10 }, boxWidth: 10,
+        generateLabels: chart => chart.data.labels.map((label, i) => ({
+          text: `${label} (${Math.round(chart.data.datasets[0].data[i]/totalVal*100)}%)`,
+          fillStyle: COLORS[i], hidden: false, index: i
+        }))
+      }}}
+    }
+  });
 }
 
 // ===== CALCULADORA OBJETIVOS =====
@@ -10167,8 +10221,8 @@ function renderSeguros() {
     const noRenovar = s.renovacion === 'no';
 
     if (dias < 0) {
-      // Vencido — si tiene renovación automática, calcular nueva fecha y mostrar como renovado
-      alertas.push({ s, dias, tipo: s.renovacion === 'si' ? 'renovado-auto' : 'vencido' });
+      // Vencido
+      alertas.push({ s, dias, tipo: 'vencido' });
     } else if (noRenovar && dias <= 60) {
       // No quiere renovar y quedan menos de 60 días → hay que avisar a la aseguradora YA
       alertas.push({ s, dias, tipo: 'cancelar' });
@@ -10181,14 +10235,7 @@ function renderSeguros() {
   if (alertas.length > 0) {
     alertasEl.innerHTML = alertas.map(({ s, dias, tipo }) => {
       let bg, border, icono, titulo, subtitulo;
-      if (tipo === 'renovado-auto') {
-        const dRenovada = new Date(s.vencimiento + 'T00:00:00');
-        dRenovada.setFullYear(dRenovada.getFullYear() + 1);
-        bg = 'rgba(40,120,80,0.07)'; border = 'rgba(40,120,80,0.25)';
-        icono = '🔄';
-        titulo = `<strong>${s.nombre}</strong> — Renovado automáticamente`;
-        subtitulo = `${s.aseguradora || ''} · Prima: ${fmt(s.prima)} · Próximo vencimiento: ${dRenovada.toLocaleDateString('es-ES')}`;
-      } else if (tipo === 'vencido') {
+      if (tipo === 'vencido') {
         bg = 'rgba(155,53,53,0.08)'; border = 'rgba(155,53,53,0.3)';
         icono = '🚨';
         titulo = `<strong>${s.nombre}</strong> — Seguro vencido hace ${-dias} días`;
@@ -10234,11 +10281,8 @@ function renderSeguros() {
     ${lista.sort((a,b) => a.vencimiento.localeCompare(b.vencimiento)).map(s => {
       const d = new Date(s.vencimiento + 'T00:00:00');
       const dias = Math.ceil((d - hoy) / (1000*60*60*24));
-      const vencidoAutoRenova = dias < 0 && s.renovacion === 'si';
-      const dMostrar = vencidoAutoRenova ? (() => { const nd = new Date(d); nd.setFullYear(nd.getFullYear()+1); return nd; })() : d;
-      const diasMostrar = vencidoAutoRenova ? Math.ceil((dMostrar - hoy) / (1000*60*60*24)) : dias;
-      const estadoClass = vencidoAutoRenova ? 'var(--green)' : dias < 0 ? 'var(--red)' : dias <= 30 ? '#b8901f' : 'var(--green)';
-      const estadoTxt = vencidoAutoRenova ? `🔄 Renovado · ${diasMostrar}d restantes` : dias < 0 ? `Vencido hace ${-dias}d` : dias === 0 ? 'Vence hoy' : `${dias}d restantes`;
+      const estadoClass = dias < 0 ? 'var(--red)' : dias <= 30 ? '#b8901f' : 'var(--green)';
+      const estadoTxt = dias < 0 ? `Vencido hace ${-dias}d` : dias === 0 ? 'Vence hoy' : `${dias}d restantes`;
       return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 80px;gap:8px;padding:13px 0;border-bottom:1px solid var(--surface2);align-items:center">
         <div>
           <div style="font-size:13px;font-weight:500">${s.nombre}</div>
@@ -10248,7 +10292,7 @@ function renderSeguros() {
         <div style="font-size:12px">${s.aseguradora || '—'}</div>
         <div style="font-family:var(--font-mono);font-size:13px;font-weight:500">${fmt(s.prima)}</div>
         <div>
-          <div style="font-size:12px">${dMostrar.toLocaleDateString('es-ES')}</div>
+          <div style="font-size:12px">${new Date(s.vencimiento + 'T00:00:00').toLocaleDateString('es-ES')}</div>
           <div style="font-size:10px;color:${estadoClass};margin-top:2px">${estadoTxt}</div>
         </div>
         <div style="display:flex;gap:4px">
@@ -10262,6 +10306,104 @@ function renderSeguros() {
 
 // ===== VIAJES =====
 
+let vjElementosTemp = [];
+
+const VJ_CAT_LABELS = {
+  vuelo: '✈️ Vuelo', alojamiento: '🏨 Alojamiento', comida: '🍽️ Comida',
+  transporte: '🚌 Transporte', ocio: '🎭 Ocio', otro: '📦 Otro'
+};
+const VJ_ESTADO_LABELS = { pendiente: '⏳ Pendiente', reservado: '✅ Reservado', pagado: '💳 Pagado' };
+const VJ_ESTADO_COLORS = { pendiente: 'var(--muted)', reservado: 'var(--accent)', pagado: 'var(--green)' };
+
+function renderVjElementosLista() {
+  const el = document.getElementById('vj-elementos-lista');
+  if (!el) return;
+  if (vjElementosTemp.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;font-style:italic">Sin elementos todavía. Pulsa "+ Añadir elemento".</div>';
+    return;
+  }
+  // Agrupar por categoría
+  const cats = ['vuelo','alojamiento','comida','transporte','ocio','otro'];
+  let html = '';
+  cats.forEach(cat => {
+    const items = vjElementosTemp.filter(e => e.cat === cat);
+    if (items.length === 0) return;
+    html += `<div style="margin-bottom:10px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:4px">${VJ_CAT_LABELS[cat]}</div>`;
+    items.forEach((item, i) => {
+      const idx = vjElementosTemp.indexOf(item);
+      html += `<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.desc}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${item.fecha ? item.fecha + ' · ' : ''}
+            <span style="color:${VJ_ESTADO_COLORS[item.estado]}">${VJ_ESTADO_LABELS[item.estado]}</span>
+            ${item.notas ? ' · ' + item.notas : ''}
+            ${item.link ? ` · <a href="${item.link}" target="_blank" style="color:var(--accent)">🔗 ver reserva</a>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span style="font-family:var(--font-mono);font-size:12px;font-weight:600">${item.precio ? fmt(item.precio) : '—'}</span>
+          <button type="button" onclick="editarElementoViaje(${idx})" style="border:none;background:none;cursor:pointer;color:var(--muted);font-size:12px">✏️</button>
+          <button type="button" onclick="eliminarElementoViaje(${idx})" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:12px">✕</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  // Total
+  const total = vjElementosTemp.reduce((s, e) => s + (e.precio || 0), 0);
+  if (total > 0) html += `<div style="text-align:right;font-size:12px;font-family:var(--font-mono);font-weight:600;color:var(--accent);padding-top:6px;border-top:1px solid var(--border)">Total elementos: ${fmt(total)}</div>`;
+  el.innerHTML = html;
+}
+
+function abrirModalElementoViaje(idx) {
+  document.getElementById('vj-el-idx').value = idx !== undefined ? idx : '';
+  if (idx !== undefined) {
+    const e = vjElementosTemp[idx];
+    document.getElementById('modalElementoViajeTitle').textContent = 'Editar elemento';
+    document.getElementById('vj-el-cat').value = e.cat;
+    document.getElementById('vj-el-desc').value = e.desc;
+    document.getElementById('vj-el-precio').value = e.precio || '';
+    document.getElementById('vj-el-fecha').value = e.fecha || '';
+    document.getElementById('vj-el-estado').value = e.estado || 'pendiente';
+    document.getElementById('vj-el-link').value = e.link || '';
+    document.getElementById('vj-el-notas').value = e.notas || '';
+  } else {
+    document.getElementById('modalElementoViajeTitle').textContent = 'Añadir elemento';
+    ['vj-el-desc','vj-el-precio','vj-el-fecha','vj-el-link','vj-el-notas'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('vj-el-cat').value = 'vuelo';
+    document.getElementById('vj-el-estado').value = 'pendiente';
+  }
+  openModal('modalElementoViaje');
+}
+
+function editarElementoViaje(idx) { abrirModalElementoViaje(idx); }
+
+function eliminarElementoViaje(idx) {
+  vjElementosTemp.splice(idx, 1);
+  renderVjElementosLista();
+}
+
+function saveElementoViaje() {
+  const idx = document.getElementById('vj-el-idx').value;
+  const desc = document.getElementById('vj-el-desc').value.trim();
+  if (!desc) return alert('La descripción es obligatoria.');
+  const elem = {
+    cat: document.getElementById('vj-el-cat').value,
+    desc,
+    precio: parseFloat(document.getElementById('vj-el-precio').value) || 0,
+    fecha: document.getElementById('vj-el-fecha').value.trim(),
+    estado: document.getElementById('vj-el-estado').value,
+    link: document.getElementById('vj-el-link').value.trim(),
+    notas: document.getElementById('vj-el-notas').value.trim()
+  };
+  if (idx !== '') vjElementosTemp[parseInt(idx)] = elem;
+  else vjElementosTemp.push(elem);
+  closeModal('modalElementoViaje');
+  renderVjElementosLista();
+}
+
 function openModalViaje(id) {
   document.getElementById('vj-edit-id').value = id || '';
   if (id) {
@@ -10269,32 +10411,30 @@ function openModalViaje(id) {
     document.getElementById('modalViajeTitle').textContent = 'Editar Viaje';
     document.getElementById('vj-destino').value = v.destino;
     document.getElementById('vj-estado').value = v.estado;
-    document.getElementById('vj-fecha-inicio').value = v.fechaInicio;
-    document.getElementById('vj-fecha-fin').value = v.fechaFin;
-    document.getElementById('vj-presupuesto-modal').value = v.presupuesto;
-    document.getElementById('vj-gasto-real').value = v.gastoReal || '';
+    document.getElementById('vj-fecha-inicio').value = v.fechaInicio || '';
+    document.getElementById('vj-fecha-fin').value = v.fechaFin || '';
+    document.getElementById('vj-presupuesto-modal').value = v.presupuesto || '';
     document.getElementById('vj-personas').value = v.personas || 1;
     document.getElementById('vj-tipo').value = v.tipo;
     document.getElementById('vj-notas').value = v.notas || '';
-    const g = v.gastos || {};
-    document.getElementById('vj-vuelos').value = g.vuelos || '';
-    document.getElementById('vj-alojamiento').value = g.alojamiento || '';
-    document.getElementById('vj-comidas').value = g.comidas || '';
-    document.getElementById('vj-transporte').value = g.transporte || '';
-    document.getElementById('vj-ocio').value = g.ocio || '';
-    document.getElementById('vj-otros').value = g.otros || '';
+    vjElementosTemp = JSON.parse(JSON.stringify(v.elementos || []));
   } else {
     document.getElementById('modalViajeTitle').textContent = 'Nuevo Viaje';
-    ['vj-destino','vj-presupuesto-modal','vj-gasto-real','vj-notas','vj-vuelos','vj-alojamiento','vj-comidas','vj-transporte','vj-ocio','vj-otros'].forEach(id => document.getElementById(id).value = '');
+    ['vj-destino','vj-presupuesto-modal','vj-notas'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('vj-personas').value = 1;
     document.getElementById('vj-estado').value = 'planificado';
     document.getElementById('vj-tipo').value = 'Vacaciones';
+    document.getElementById('vj-fecha-inicio').value = '';
+    document.getElementById('vj-fecha-fin').value = '';
+    vjElementosTemp = [];
   }
+  renderVjElementosLista();
   openModal('modalViaje');
 }
 
 function saveViaje() {
   const id = document.getElementById('vj-edit-id').value;
+  const gastoReal = vjElementosTemp.reduce((s, e) => s + (e.precio || 0), 0);
   const v = {
     id: id ? parseInt(id) : Date.now(),
     destino: document.getElementById('vj-destino').value.trim(),
@@ -10302,18 +10442,11 @@ function saveViaje() {
     fechaInicio: document.getElementById('vj-fecha-inicio').value,
     fechaFin: document.getElementById('vj-fecha-fin').value,
     presupuesto: parseFloat(document.getElementById('vj-presupuesto-modal').value) || 0,
-    gastoReal: parseFloat(document.getElementById('vj-gasto-real').value) || 0,
+    gastoReal,
     personas: parseInt(document.getElementById('vj-personas').value) || 1,
     tipo: document.getElementById('vj-tipo').value,
     notas: document.getElementById('vj-notas').value.trim(),
-    gastos: {
-      vuelos: parseFloat(document.getElementById('vj-vuelos').value) || 0,
-      alojamiento: parseFloat(document.getElementById('vj-alojamiento').value) || 0,
-      comidas: parseFloat(document.getElementById('vj-comidas').value) || 0,
-      transporte: parseFloat(document.getElementById('vj-transporte').value) || 0,
-      ocio: parseFloat(document.getElementById('vj-ocio').value) || 0,
-      otros: parseFloat(document.getElementById('vj-otros').value) || 0,
-    }
+    elementos: vjElementosTemp
   };
   if (!v.destino) { alert('El destino es obligatorio.'); return; }
   if (id) viajes = viajes.map(x => x.id === parseInt(id) ? v : x);
@@ -10467,16 +10600,26 @@ function renderViajes() {
           <div style="height:100%;width:${pctGasto}%;background:${pctGasto>100?'var(--red)':pctGasto>80?'#b8901f':'var(--green)'};border-radius:2px;transition:width 0.4s"></div>
         </div>` : ''}
         ${v.notas ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;font-style:italic">📝 ${v.notas}</div>` : ''}
-        ${v.gastos && Object.values(v.gastos).some(x=>x>0) ? `
+        ${v.elementos && v.elementos.length > 0 ? `
         <div style="margin-top:14px;border-top:1px solid var(--surface2);padding-top:12px">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:8px">Desglose de gastos</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            ${[['✈️','Vuelos','vuelos'],['🏨','Alojamiento','alojamiento'],['🍽️','Comidas','comidas'],['🚌','Transporte','transporte'],['🎭','Ocio','ocio'],['📦','Otros','otros']].filter(([,, k]) => v.gastos[k] > 0).map(([emoji, label, k]) => `
-              <div style="background:var(--surface2);border-radius:6px;padding:6px 10px;font-size:11px">
-                <span>${emoji} ${label}</span>
-                <span style="font-family:var(--font-mono);font-weight:600;margin-left:6px">${fmt(v.gastos[k])}</span>
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:8px">Detalle del viaje</div>
+          ${['vuelo','alojamiento','comida','transporte','ocio','otro'].map(cat => {
+            const items = v.elementos.filter(e => e.cat === cat);
+            if (!items.length) return '';
+            return `<div style="margin-bottom:8px">
+              <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${VJ_CAT_LABELS[cat]}</div>
+              ${items.map(item => `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 8px;background:var(--surface2);border-radius:5px;margin-bottom:3px;gap:8px">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:500">${item.desc}</div>
+                  <div style="font-size:10px;color:var(--muted)">
+                    ${item.fecha ? item.fecha + ' · ' : ''}<span style="color:${VJ_ESTADO_COLORS[item.estado]}">${VJ_ESTADO_LABELS[item.estado]}</span>${item.notas ? ' · ' + item.notas : ''}
+                    ${item.link ? ` · <a href="${item.link}" target="_blank" style="color:var(--accent)">🔗 reserva</a>` : ''}
+                  </div>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:12px;font-weight:600;flex-shrink:0">${item.precio ? fmt(item.precio) : '—'}</span>
               </div>`).join('')}
-          </div>
+            </div>`;
+          }).join('')}
         </div>` : ''}
       </div>
     </div>`;
@@ -11152,7 +11295,7 @@ function renderEfectivo() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px">Retirado</div>
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado + totalIngresosEfectivo)}</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">${fmt(totalRetirado)}</div>
           ${anterior > 0 ? `<div style="font-size:10px;color:var(--muted)">+${fmt(anterior)} de mes anterior</div>` : ''}
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:9px 10px">
@@ -11170,7 +11313,7 @@ function renderEfectivo() {
         <div style="height:6px;background:${barColor};width:${pctGastado}%;border-radius:4px"></div>
       </div>` : ''}
 
-      ${retiradas.length > 0 || txIngresosMes.length > 0 ? `<div style="margin-bottom:12px">
+      ${retiradas.length > 0 ? `<div style="margin-bottom:12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:500;margin-bottom:6px">📥 Retiradas del cajero</div>
         ${retiradas.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
           <span style="color:var(--text)">${r.desc}</span>
@@ -11179,10 +11322,6 @@ function renderEfectivo() {
             <button onclick="editarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Editar">✏️</button>
             <button onclick="eliminarRetirada(${r.id})" style="font-size:11px;color:var(--muted);border:none;background:none;cursor:pointer;line-height:1" title="Eliminar">✕</button>
           </div>
-        </div>`).join('')}
-        ${txIngresosMes.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">
-          <span style="color:var(--text)">${t.desc}</span>
-          <span style="font-family:var(--font-mono);color:var(--accent);font-weight:600">+${fmt(t.importe)}</span>
         </div>`).join('')}
       </div>` : ''}
 
@@ -11303,16 +11442,11 @@ function renderRecurrentes(mes) {
 
   const grupos = {};
   transactions.filter(t=>t.tipo==='Gasto').forEach(t => {
-    // Agrupar primero por categoría (para que Mensualidad Nico/Dani aparezcan aunque varíe la desc)
-    // y si la categoría aparece sólo una vez, usar la descripción como fallback
-    const keyByCat = 'cat:' + t.cat.toLowerCase().trim();
-    const keyByDesc = t.desc.toLowerCase().trim().substring(0,30);
-    // Preferir la clave por categoría para transacciones con categoría propia
-    const key = keyByCat;
+    const key = t.desc.toLowerCase().trim().substring(0,30);
     const mesT = t.fecha.substring(0,7);
     if (!grupos[key]) grupos[key] = { desc: t.desc, cat: t.cat, porMes: {} };
     if (!grupos[key].porMes[mesT]) grupos[key].porMes[mesT] = 0;
-    grupos[key].porMes[mesT] += t.importe;
+    grupos[key].porMes[mesT] += t.importe; // acumular total del mes, no por transacción
   });
 
   const recurrentes = Object.values(grupos)
@@ -11393,10 +11527,13 @@ const AGENDA_TIPO = {
 };
 
 function toggleAgendaFechas() {
-  const tipo = document.getElementById('ag-tipo').value;
-  const esViaje = tipo === 'viaje';
-  document.getElementById('ag-fecha-unica-group').style.display = esViaje ? 'none' : '';
-  document.getElementById('ag-fechas-rango-group').style.display = esViaje ? '' : 'none';
+  const tipo = document.getElementById('ag-tipo')?.value;
+  const simple = document.getElementById('ag-grupo-fecha-simple');
+  const rango  = document.getElementById('ag-grupo-fechas-rango');
+  if (!simple || !rango) return;
+  const usaRango = (tipo === 'viaje' || tipo === 'evento');
+  simple.style.display = usaRango ? 'none' : '';
+  rango.style.display  = usaRango ? '' : 'none';
 }
 
 function saveAgenda() {
@@ -11409,23 +11546,23 @@ function openModalAgenda(id) {
   if (id) {
     const e = agendaEventos.find(x => x.id === id);
     document.getElementById('modalAgendaTitle').textContent = 'Editar Evento';
-    document.getElementById('ag-fecha').value   = e.fecha || '';
-    document.getElementById('ag-tipo').value    = e.tipo;
-    document.getElementById('ag-desc').value    = e.desc;
-    document.getElementById('ag-importe').value = e.importe || '';
-    document.getElementById('ag-estado').value  = e.estado;
-    document.getElementById('ag-notas').value   = e.notas || '';
-    document.getElementById('ag-fecha-inicio').value = e.fechaInicio || '';
+    document.getElementById('ag-fecha').value        = e.fecha || '';
+    document.getElementById('ag-tipo').value         = e.tipo;
+    document.getElementById('ag-desc').value         = e.desc;
+    document.getElementById('ag-importe').value      = e.importe || '';
+    document.getElementById('ag-estado').value       = e.estado;
+    document.getElementById('ag-notas').value        = e.notas || '';
+    document.getElementById('ag-fecha-inicio').value = e.fechaInicio || e.fecha || '';
     document.getElementById('ag-fecha-fin').value    = e.fechaFin || '';
   } else {
     document.getElementById('modalAgendaTitle').textContent = 'Nuevo Evento';
-    document.getElementById('ag-fecha').value   = hoy;
-    document.getElementById('ag-tipo').value    = 'pago';
-    document.getElementById('ag-desc').value    = '';
-    document.getElementById('ag-importe').value = '';
-    document.getElementById('ag-estado').value  = 'pendiente';
-    document.getElementById('ag-notas').value   = '';
-    document.getElementById('ag-fecha-inicio').value = '';
+    document.getElementById('ag-fecha').value        = hoy;
+    document.getElementById('ag-tipo').value         = 'pago';
+    document.getElementById('ag-desc').value         = '';
+    document.getElementById('ag-importe').value      = '';
+    document.getElementById('ag-estado').value       = 'pendiente';
+    document.getElementById('ag-notas').value        = '';
+    document.getElementById('ag-fecha-inicio').value = hoy;
     document.getElementById('ag-fecha-fin').value    = '';
   }
   toggleAgendaFechas();
@@ -11433,18 +11570,19 @@ function openModalAgenda(id) {
 }
 
 function saveEventoAgenda() {
-  const id      = parseInt(document.getElementById('ag-edit-id').value) || null;
-  const tipo    = document.getElementById('ag-tipo').value;
-  const esViaje = tipo === 'viaje';
-  const fecha   = esViaje ? (document.getElementById('ag-fecha-inicio').value || document.getElementById('ag-fecha-fin').value) : document.getElementById('ag-fecha').value;
-  const fechaInicio = esViaje ? document.getElementById('ag-fecha-inicio').value : '';
-  const fechaFin    = esViaje ? document.getElementById('ag-fecha-fin').value : '';
-  const desc    = document.getElementById('ag-desc').value.trim();
+  const id     = parseInt(document.getElementById('ag-edit-id').value) || null;
+  const tipo   = document.getElementById('ag-tipo').value;
+  const usaRango = (tipo === 'viaje' || tipo === 'evento');
+  const fechaInicio = document.getElementById('ag-fecha-inicio').value;
+  const fechaFin    = document.getElementById('ag-fecha-fin').value;
+  const fecha  = usaRango ? fechaInicio : document.getElementById('ag-fecha').value;
+  const desc   = document.getElementById('ag-desc').value.trim();
   const importe = parseFloat(document.getElementById('ag-importe').value) || 0;
-  const estado  = document.getElementById('ag-estado').value;
-  const notas   = document.getElementById('ag-notas').value.trim();
+  const estado = document.getElementById('ag-estado').value;
+  const notas  = document.getElementById('ag-notas').value.trim();
   if (!fecha || !desc) return alert('Rellena la fecha y descripción.');
-  const evento = { id: id || Date.now(), fecha, tipo, desc, importe, estado, notas, ...(esViaje && { fechaInicio, fechaFin }) };
+  const evento = { id: id || Date.now(), fecha, tipo, desc, importe, estado, notas,
+    ...(usaRango && { fechaInicio, fechaFin }) };
   if (id) {
     const idx = agendaEventos.findIndex(e => e.id === id);
     if (idx >= 0) agendaEventos[idx] = evento;
@@ -11570,7 +11708,7 @@ function renderAgenda() {
   const diasMes    = new Date(y, m, 0).getDate();
   const offset     = (primerDia + 6) % 7; // lunes=0
   const eventosMes = agendaEventos.filter(e => {
-    if (e.tipo === 'viaje' && e.fechaInicio && e.fechaFin) {
+    if ((e.tipo === "viaje" || e.tipo === "evento") && e.fechaInicio && e.fechaFin) {
       return e.fechaInicio.substring(0,7) <= agendaMesActual && e.fechaFin.substring(0,7) >= agendaMesActual;
     }
     return e.fecha.startsWith(agendaMesActual);
@@ -11607,16 +11745,16 @@ function renderAgenda() {
   }
   listaEl.innerHTML = eventos.map(e => {
     const t     = AGENDA_TIPO[e.tipo] || AGENDA_TIPO.nota;
-    const esViaje = e.tipo === 'viaje' && e.fechaInicio && e.fechaFin;
-    const fechaLabel = esViaje
-      ? `${new Date(e.fechaInicio+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})} → ${new Date(e.fechaFin+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}`
-      : new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+    const esRango = (e.tipo === "viaje" || e.tipo === "evento") && e.fechaInicio && e.fechaFin;
+    const fecha = esRango
+      ? new Date(e.fechaInicio+"T00:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"short"}) + " → " + new Date(e.fechaFin+"T00:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"short"})
+      : new Date(e.fecha+"T00:00:00").toLocaleDateString("es-ES", {day:"numeric",month:"short"});
     const hecho = e.estado === 'hecho';
     return `<div class="agenda-row" style="${hecho?'opacity:0.5':''}">
       <div class="agenda-tipo-badge" style="background:${t.bg}">${t.emoji}</div>
       <div>
         <div style="font-size:13px;font-weight:500${hecho?';text-decoration:line-through':''}">${e.desc}</div>
-        <div style="font-size:11px;color:var(--muted)">${fechaLabel} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
+        <div style="font-size:11px;color:var(--muted)">${fecha} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
       </div>
       <div style="display:flex;gap:4px">
         <button onclick="toggleEstadoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" title="${hecho?'Marcar pendiente':'Marcar hecho'}">${hecho?'↩':'✓'}</button>
