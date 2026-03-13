@@ -12442,70 +12442,7 @@ function renderAgendaAlertas() {
   if (elResumen) elResumen.innerHTML = htmlAhorro + html;
 }
 
-function renderAgenda() {
-  const tituloEl   = document.getElementById('agenda-mes-titulo');
-  const calEl      = document.getElementById('agenda-calendario');
-  const listaEl    = document.getElementById('agenda-lista');
-  const tipoFilter = document.getElementById('agenda-tipo-filter')?.value || 'all';
-  if (!calEl) return;
-
-  const [y, m] = agendaMesActual.split('-').map(Number);
-  if (tituloEl) tituloEl.textContent = new Date(y, m-1, 1).toLocaleDateString('es-ES', { month:'long', year:'numeric' }).replace(/^\w/, c => c.toUpperCase());
-
-  const hoy        = new Date(); hoy.setHours(0,0,0,0);
-  const primerDia  = new Date(y, m-1, 1).getDay(); // 0=dom
-  const diasMes    = new Date(y, m, 0).getDate();
-  const offset     = (primerDia + 6) % 7; // lunes=0
-  const eventosMes = agendaEventos.filter(e => e.fecha.startsWith(agendaMesActual));
-
-  // Calendrio
-  const dias = ['L','M','X','J','V','S','D'];
-  let cal = `<div class="cal-grid">`;
-  dias.forEach(d => cal += `<div class="cal-header">${d}</div>`);
-  for (let i = 0; i < offset; i++) cal += `<div class="cal-day empty"></div>`;
-  for (let d = 1; d <= diasMes; d++) {
-    const fechaStr = `${agendaMesActual}-${String(d).padStart(2,'0')}`;
-    const esHoy    = new Date(fechaStr+'T00:00:00').getTime() === hoy.getTime();
-    const evsDia   = eventosMes.filter(e => e.fecha === fechaStr);
-    cal += `<div class="cal-day${esHoy?' hoy':''}">
-      <div class="cal-day-num">${d}</div>
-      ${evsDia.map(e => `<div class="cal-evento cal-evento-${e.tipo}${e.estado==='hecho'?' cal-evento-hecho':''}" onclick="openModalAgenda(${e.id})" title="${e.desc}">
-        ${AGENDA_TIPO[e.tipo]?.emoji || '📝'} ${e.desc}
-      </div>`).join('')}
-    </div>`;
-  }
-  cal += `</div>`;
-  calEl.innerHTML = cal;
-
-  // Lista del mes
-  let eventos = eventosMes;
-  if (tipoFilter !== 'all') eventos = eventos.filter(e => e.tipo === tipoFilter);
-  eventos = [...eventos].sort((a,b) => a.fecha.localeCompare(b.fecha));
-
-  if (!listaEl) return;
-  if (eventos.length === 0) {
-    listaEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-icon">🗓</div>Sin eventos este mes</div>';
-    return;
-  }
-  listaEl.innerHTML = eventos.map(e => {
-    const t     = AGENDA_TIPO[e.tipo] || AGENDA_TIPO.nota;
-    const fecha = new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'short'});
-    const hecho = e.estado === 'hecho';
-    return `<div class="agenda-row" style="${hecho?'opacity:0.5':''}">
-      <div class="agenda-tipo-badge" style="background:${t.bg}">${t.emoji}</div>
-      <div>
-        <div style="font-size:13px;font-weight:500${hecho?';text-decoration:line-through':''}">${e.desc}</div>
-        <div style="font-size:11px;color:var(--muted)">${fecha} · ${t.label}${e.importe?` · ${fmt(e.importe)}`:''}${e.notas?` · ${e.notas}`:''}</div>
-      </div>
-      <div style="display:flex;gap:4px">
-        <button onclick="toggleEstadoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" title="${hecho?'Marcar pendiente':'Marcar hecho'}">${hecho?'↩':'✓'}</button>
-        <button onclick="openModalAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px">✏️</button>
-        <button onclick="deleteEventoAgenda(${e.id})" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:var(--red);border-color:var(--red)">✕</button>
-      </div>
-      <span style="font-size:11px;padding:3px 8px;border-radius:4px;background:${hecho?'var(--surface2)':t.bg};color:${hecho?'var(--muted)':t.color};white-space:nowrap">${hecho?'Hecho':e.estado==='cancelado'?'Cancelado':'Pendiente'}</span>
-    </div>`;
-  }).join('');
-}
+// (segunda copia de renderAgenda eliminada)
 
 </script>
 
