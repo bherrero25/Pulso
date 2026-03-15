@@ -12096,14 +12096,27 @@ function initLeasing() {
   sel.innerHTML = '<option value="0">Ninguna (inicio)</option>' +
     '<option value="1">Cuota 1 — 13/02/2026 (pagada)</option>' +
     LEASING_CUOTAS.map(c => `<option value="${c.num}">${c.num} — ${c.fecha}</option>`).join('');
-  // Auto-calculate: cuota 1 (Feb 2026) + any leasing entries in bonusAnual
-  // Each bonusAnual gasto with 'leasing' in desc/cat represents one additional paid installment
-  const cuotasEnBonus = (bonusAnual || []).filter(b =>
+  // Auto-calculate: find the latest leasing entry in bonusAnual by date
+  // Cuota 1 = 13/02/2026, cuota 2 = 13/03/2026, etc. (months from Feb 2026)
+  const leasingEntries = (bonusAnual || []).filter(b =>
     b._tipo === 'gasto' &&
     ((b.desc && b.desc.toLowerCase().includes('leasing')) ||
-     (b.cat  && b.cat.toLowerCase().includes('leasing')))
-  ).length;
-  sel.value = String(1 + cuotasEnBonus);
+     (b.cat  && b.cat.toLowerCase().includes('leasing'))) &&
+    b.fecha
+  );
+  let ultimaCuota = 1; // default: cuota 1 (Feb 2026) already paid
+  if (leasingEntries.length > 0) {
+    // Find the latest fecha among leasing entries
+    const fechaBase = new Date('2026-02-13'); // cuota 1
+    leasingEntries.forEach(b => {
+      const f = new Date(b.fecha);
+      // Number of months from Feb 2026
+      const meses = (f.getFullYear() - 2026) * 12 + (f.getMonth() - 1); // Feb=1
+      const numCuota = 1 + meses; // cuota 1 = Feb, cuota 2 = Mar, etc.
+      if (numCuota > ultimaCuota) ultimaCuota = numCuota;
+    });
+  }
+  sel.value = String(ultimaCuota);
   renderLeasing();
 }
 
