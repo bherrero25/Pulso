@@ -12073,6 +12073,7 @@ function guardarGastoBonus() {
   saveBonus();
   closeModal('modalGastoBonus');
   renderBonus();
+  initLeasing(); // Recalcular cuotas pagadas del leasing automáticamente
 }
 
 function eliminarGastoBonus(id) {
@@ -12080,6 +12081,7 @@ function eliminarGastoBonus(id) {
   bonusAnual = bonusAnual.filter(b => b.id !== id);
   saveBonus();
   renderBonus();
+  initLeasing(); // Recalcular cuotas pagadas del leasing automáticamente
 }
 
 
@@ -12094,8 +12096,14 @@ function initLeasing() {
   sel.innerHTML = '<option value="0">Ninguna (inicio)</option>' +
     '<option value="1">Cuota 1 — 13/02/2026 (pagada)</option>' +
     LEASING_CUOTAS.map(c => `<option value="${c.num}">${c.num} — ${c.fecha}</option>`).join('');
-  // Default: cuota 1 paid (started Feb 2026)
-  sel.value = '1';
+  // Auto-calculate: cuota 1 (Feb 2026) + any leasing entries in bonusAnual
+  // Each bonusAnual gasto with 'leasing' in desc/cat represents one additional paid installment
+  const cuotasEnBonus = (bonusAnual || []).filter(b =>
+    b._tipo === 'gasto' &&
+    ((b.desc && b.desc.toLowerCase().includes('leasing')) ||
+     (b.cat  && b.cat.toLowerCase().includes('leasing')))
+  ).length;
+  sel.value = String(1 + cuotasEnBonus);
   renderLeasing();
 }
 
