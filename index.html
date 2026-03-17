@@ -1469,7 +1469,10 @@
           </select>
           <select class="month-selector" style="padding:5px 10px;font-size:12px;" id="txCatFilter" onchange="renderTxTable()">
   <option value="all">Todas las categorías</option>
+</select><select class="month-selector" style="padding:5px 10px;font-size:12px;" id="txCuentaFilter" onchange="renderTxTable()">
+  <option value="all">Todas las cuentas</option>
 </select>
+          
           <div style="display:flex;gap:4px;margin-left:8px">
   <button id="btn-vista-lista" class="btn btn-gold" style="font-size:11px;padding:4px 10px" onclick="setVistaTx('lista')">≡ Lista</button>
   <button id="btn-vista-resumen" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="setVistaTx('resumen')">⊞ Resumen</button>
@@ -8324,7 +8327,7 @@ function setVistaTx(v) {
   document.getElementById('btn-vista-resumen').className = v==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
   renderTxTable();
 function renderTxTable() {
-  // Poblar selector categorías
+  // Poblar selectores dinámicos
   const catSel = document.getElementById('txCatFilter');
   if (catSel) {
     const cats = [...new Set(transactions.map(t => t.cat))].sort();
@@ -8332,16 +8335,24 @@ function renderTxTable() {
     catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
       cats.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('');
   }
+  const cuentaSel = document.getElementById('txCuentaFilter');
+  if (cuentaSel) {
+    const cuentas = [...new Set(transactions.map(t => t.cuenta||'').filter(Boolean))].sort();
+    const currentC = cuentaSel.value;
+    cuentaSel.innerHTML = '<option value="all">Todas las cuentas</option>' +
+      cuentas.map(c => `<option value="${c}" ${c===currentC?'selected':''}>${c}</option>`).join('');
+  }
 
   const mFilter = document.getElementById('txMonthFilter').value;
   const tFilter = document.getElementById('txTypeFilter').value;
   const cFilter = document.getElementById('txCatFilter')?.value || 'all';
+  const cuentaFilter = document.getElementById('txCuentaFilter')?.value || 'all';
   const search = (document.getElementById('txSearch')?.value || '').toLowerCase().trim();
 
-  // Transacciones filtradas para lista
   let txs = getFilteredTx(mFilter);
   if (tFilter !== 'all') txs = txs.filter(t => t.tipo === tFilter);
   if (cFilter !== 'all') txs = txs.filter(t => t.cat === cFilter);
+  if (cuentaFilter !== 'all') txs = txs.filter(t => (t.cuenta||'') === cuentaFilter);
   if (search) txs = txs.filter(t =>
     t.desc.toLowerCase().includes(search) ||
     t.cat.toLowerCase().includes(search) ||
@@ -8350,7 +8361,6 @@ function renderTxTable() {
   );
   txs = [...txs].sort((a,b) => b.fecha.localeCompare(a.fecha));
 
-  // Contador
   const countEl = document.getElementById('txCount');
   if (countEl) {
     const totalGastos = txs.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
@@ -8370,12 +8380,13 @@ function renderTxTable() {
     tabla.style.display = 'none';
     resumenDiv.style.display = 'block';
 
-    // Resumen usa todas las transacciones, solo filtrado por categoría
     let txsR = transactions;
     if (cFilter !== 'all') txsR = txsR.filter(t => t.cat === cFilter);
+    if (cuentaFilter !== 'all') txsR = txsR.filter(t => (t.cuenta||'') === cuentaFilter);
+    txsR = txsR.filter(t => t.tipo === 'Gasto');
 
     const catData = {};
-    txsR.filter(t=>t.tipo==='Gasto').forEach(t => {
+    txsR.forEach(t => {
       if (!catData[t.cat]) catData[t.cat] = {};
       const m = t.fecha.substring(0,7);
       catData[t.cat][m] = (catData[t.cat][m]||0) + t.importe;
@@ -8403,7 +8414,6 @@ function renderTxTable() {
     return;
   }
 
-  // Vista lista
   tabla.style.display = '';
   resumenDiv.style.display = 'none';
 
@@ -8426,6 +8436,7 @@ function renderTxTable() {
       </td>
     </tr>
   `).join('');
+}
 }
 // ===== FUNDS =====
 function renderFunds() {
