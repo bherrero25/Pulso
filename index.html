@@ -8315,11 +8315,19 @@ function renderLastTx() {
 // ===== TX TABLE =====
 function renderTxTable() {
   const mFilter = document.getElementById('txMonthFilter').value;
+  const catSel = document.getElementById('txCatFilter');
+if (catSel) {
+  const cats = [...new Set(transactions.map(t => t.cat))].sort();
+  const current = catSel.value;
+  catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
+    cats.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('');
+}
   const tFilter = document.getElementById('txTypeFilter').value;
   const cFilter = document.getElementById('txCatFilter')?.value || 'all';
   const search = (document.getElementById('txSearch')?.value || '').toLowerCase().trim();
   let txs = getFilteredTx(mFilter);
   if (tFilter !== 'all') txs = txs.filter(t => t.tipo === tFilter);
+  if (cFilter !== 'all') txs = txs.filter(t => t.cat === cFilter);
   if (search) txs = txs.filter(t =>
     t.desc.toLowerCase().includes(search) ||
     t.cat.toLowerCase().includes(search) ||
