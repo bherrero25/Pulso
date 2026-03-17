@@ -1470,6 +1470,10 @@
           <select class="month-selector" style="padding:5px 10px;font-size:12px;" id="txCatFilter" onchange="renderTxTable()">
   <option value="all">Todas las categorías</option>
 </select>
+          <div style="display:flex;gap:4px;margin-left:8px">
+  <button id="btn-vista-lista" class="btn btn-gold" style="font-size:11px;padding:4px 10px" onclick="setVistaTx('lista')">≡ Lista</button>
+  <button id="btn-vista-resumen" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="setVistaTx('resumen')">⊞ Resumen</button>
+</div>
         </div>
       </div>
       <div class="table-scroll" style="max-height:500px">
@@ -8313,6 +8317,13 @@ function renderLastTx() {
 }
 
 // ===== TX TABLE =====
+ let _vistaTx = 'lista';
+function setVistaTx(v) {
+  _vistaTx = v;
+  document.getElementById('btn-vista-lista').className = v==='lista' ? 'btn btn-gold' : 'btn btn-ghost';
+  document.getElementById('btn-vista-resumen').className = v==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
+  renderTxTable();
+} 
 function renderTxTable() {
   const mFilter = document.getElementById('txMonthFilter').value;
   const catSel = document.getElementById('txCatFilter');
@@ -8363,6 +8374,35 @@ if (catSel) {
       </td>
     </tr>
   `).join('');
+  if (_vistaTx === 'resumen') {
+    const catData = {};
+    txs.filter(t=>t.tipo==='Gasto').forEach(t => {
+      if (!catData[t.cat]) catData[t.cat] = {};
+      const m = t.fecha.substring(0,7);
+      catData[t.cat][m] = (catData[t.cat][m]||0) + t.importe;
+    });
+    const meses = [...new Set(txs.map(t=>t.fecha.substring(0,7)))].sort();
+    let html = '<div style="padding:0 22px">';
+    Object.keys(catData).sort().forEach(cat => {
+      const total = Object.values(catData[cat]).reduce((a,b)=>a+b,0);
+      html += `<div style="margin-bottom:16px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;padding:10px 0 6px;border-bottom:1px solid var(--border)">${cat}</div>`;
+      meses.forEach(m => {
+        if (!catData[cat][m]) return;
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface2);font-size:13px">
+          <span style="color:var(--muted)">${formatMonth(m)}</span>
+          <span style="font-family:var(--font-mono)">${fmt(catData[cat][m])}</span>
+        </div>`;
+      });
+      html += `<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:600">
+        <span>Total</span>
+        <span style="font-family:var(--font-mono);color:var(--accent)">${fmt(total)}</span>
+      </div></div>`;
+    });
+    html += '</div>';
+    document.getElementById('tbodyAll').closest('table').parentElement.innerHTML = html;
+    return;
+  }
 }
 
 // ===== FUNDS =====
