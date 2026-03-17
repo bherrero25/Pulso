@@ -8360,14 +8360,16 @@ if (catSel) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Sin transacciones</div></td></tr>`;
     return;
   }
-  if (_vistaTx === 'resumen') {
+  if (_vistaTx === 'resumen') {const txsResumen = cFilter !== 'all' 
+      ? transactions.filter(t => t.cat === cFilter)
+      : transactions;
     const catData = {};
-    txs.filter(t=>t.tipo==='Gasto').forEach(t => {
+    txsResumen.filter(t=>t.tipo==='Gasto').forEach(t => {
       if (!catData[t.cat]) catData[t.cat] = {};
       const m = t.fecha.substring(0,7);
       catData[t.cat][m] = (catData[t.cat][m]||0) + t.importe;
     });
-    const meses = [...new Set(txs.map(t=>t.fecha.substring(0,7)))].sort();
+    const meses = [...new Set(txsResumen.map(t=>t.fecha.substring(0,7)))].sort();
     let html = '<div style="padding:0 22px">';
     Object.keys(catData).sort().forEach(cat => {
       const total = Object.values(catData[cat]).reduce((a,b)=>a+b,0);
