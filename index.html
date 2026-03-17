@@ -8323,26 +8323,22 @@ function setVistaTx(v) {
   document.getElementById('btn-vista-lista').className = v==='lista' ? 'btn btn-gold' : 'btn btn-ghost';
   document.getElementById('btn-vista-resumen').className = v==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
   renderTxTable();
-} 
-function renderTxTable() {const tabla = document.getElementById('tbodyAll')?.closest('table');
-const resumenDiv = document.getElementById('resumen-cats');
-if (_vistaTx === 'lista') {
-  if (tabla) tabla.style.display = '';
-  if (resumenDiv) resumenDiv.style.display = 'none';
-} else {
-  if (tabla) tabla.style.display = 'none';
-}
-  const mFilter = document.getElementById('txMonthFilter').value;
+function renderTxTable() {
+  // Poblar selector categorías
   const catSel = document.getElementById('txCatFilter');
-if (catSel) {
-  const cats = [...new Set(transactions.map(t => t.cat))].sort();
-  const current = catSel.value;
-  catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
-    cats.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('');
-}
+  if (catSel) {
+    const cats = [...new Set(transactions.map(t => t.cat))].sort();
+    const current = catSel.value;
+    catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
+      cats.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('');
+  }
+
+  const mFilter = document.getElementById('txMonthFilter').value;
   const tFilter = document.getElementById('txTypeFilter').value;
   const cFilter = document.getElementById('txCatFilter')?.value || 'all';
   const search = (document.getElementById('txSearch')?.value || '').toLowerCase().trim();
+
+  // Transacciones filtradas para lista
   let txs = getFilteredTx(mFilter);
   if (tFilter !== 'all') txs = txs.filter(t => t.tipo === tFilter);
   if (cFilter !== 'all') txs = txs.filter(t => t.cat === cFilter);
@@ -8362,21 +8358,29 @@ if (catSel) {
     countEl.textContent = `${txs.length} registros · Ingresos: ${fmt(totalIngresos)} · Gastos: ${fmt(totalGastos)}`;
   }
 
-  const tbody = document.getElementById('tbodyAll');
-  if (txs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Sin transacciones</div></td></tr>`;
-    return;
+  const tabla = document.getElementById('tbodyAll')?.closest('table');
+  let resumenDiv = document.getElementById('resumen-cats');
+  if (!resumenDiv) {
+    resumenDiv = document.createElement('div');
+    resumenDiv.id = 'resumen-cats';
+    tabla?.parentElement.appendChild(resumenDiv);
   }
-  if (_vistaTx === 'resumen') {const txsResumen = cFilter !== 'all' 
-      ? transactions.filter(t => t.cat === cFilter)
-      : transactions;
+
+  if (_vistaTx === 'resumen') {
+    tabla.style.display = 'none';
+    resumenDiv.style.display = 'block';
+
+    // Resumen usa todas las transacciones, solo filtrado por categoría
+    let txsR = transactions;
+    if (cFilter !== 'all') txsR = txsR.filter(t => t.cat === cFilter);
+
     const catData = {};
-    txsResumen.filter(t=>t.tipo==='Gasto').forEach(t => {
+    txsR.filter(t=>t.tipo==='Gasto').forEach(t => {
       if (!catData[t.cat]) catData[t.cat] = {};
       const m = t.fecha.substring(0,7);
       catData[t.cat][m] = (catData[t.cat][m]||0) + t.importe;
     });
-    const meses = [...new Set(txsResumen.map(t=>t.fecha.substring(0,7)))].sort();
+    const meses = [...new Set(txsR.map(t=>t.fecha.substring(0,7)))].sort();
     let html = '<div style="padding:0 22px">';
     Object.keys(catData).sort().forEach(cat => {
       const total = Object.values(catData[cat]).reduce((a,b)=>a+b,0);
@@ -8395,7 +8399,17 @@ if (catSel) {
       </div></div>`;
     });
     html += '</div>';
-    document.getElementById('tbodyAll').closest('table').style.display = 'none'; let resumenDiv = document.getElementById('resumen-cats'); if (!resumenDiv) {   resumenDiv = document.createElement('div');   resumenDiv.id = 'resumen-cats';   document.getElementById('tbodyAll').closest('table').parentElement.appendChild(resumenDiv); } resumenDiv.innerHTML = html; resumenDiv.style.display = 'block'; return;
+    resumenDiv.innerHTML = html;
+    return;
+  }
+
+  // Vista lista
+  tabla.style.display = '';
+  resumenDiv.style.display = 'none';
+
+  const tbody = document.getElementById('tbodyAll');
+  if (txs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Sin transacciones</div></td></tr>`;
     return;
   }
   tbody.innerHTML = txs.map(t => `
@@ -8413,7 +8427,6 @@ if (catSel) {
     </tr>
   `).join('');
 }
-
 // ===== FUNDS =====
 function renderFunds() {
   const total = funds.reduce((a,b)=>a+b.valor,0);
