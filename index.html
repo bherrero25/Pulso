@@ -8316,6 +8316,7 @@ function renderLastTx() {
 function renderTxTable() {
   const mFilter = document.getElementById('txMonthFilter').value;
   const tFilter = document.getElementById('txTypeFilter').value;
+  const cFilter = document.getElementById('txCatFilter')?.value || 'all';
   const search = (document.getElementById('txSearch')?.value || '').toLowerCase().trim();
   let txs = getFilteredTx(mFilter);
   if (tFilter !== 'all') txs = txs.filter(t => t.tipo === tFilter);
