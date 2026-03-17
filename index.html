@@ -8324,7 +8324,14 @@ function setVistaTx(v) {
   document.getElementById('btn-vista-resumen').className = v==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
   renderTxTable();
 } 
-function renderTxTable() {
+function renderTxTable() {const tabla = document.getElementById('tbodyAll')?.closest('table');
+const resumenDiv = document.getElementById('resumen-cats');
+if (_vistaTx === 'lista') {
+  if (tabla) tabla.style.display = '';
+  if (resumenDiv) resumenDiv.style.display = 'none';
+} else {
+  if (tabla) tabla.style.display = 'none';
+}
   const mFilter = document.getElementById('txMonthFilter').value;
   const catSel = document.getElementById('txCatFilter');
 if (catSel) {
@@ -8388,7 +8395,7 @@ if (catSel) {
       </div></div>`;
     });
     html += '</div>';
-    document.getElementById('tbodyAll').closest('table').parentElement.innerHTML = html;
+    document.getElementById('tbodyAll').closest('table').style.display = 'none'; let resumenDiv = document.getElementById('resumen-cats'); if (!resumenDiv) {   resumenDiv = document.createElement('div');   resumenDiv.id = 'resumen-cats';   document.getElementById('tbodyAll').closest('table').parentElement.appendChild(resumenDiv); } resumenDiv.innerHTML = html; resumenDiv.style.display = 'block'; return;
     return;
   }
   tbody.innerHTML = txs.map(t => `
