@@ -755,7 +755,7 @@
 
 <!-- PIN LOCK SCREEN -->
 <div id="pinScreen" class="hidden">
-  <div class="pin-logo">WEALTH</div>
+  <div class="pin-logo">PULSO</div>
   <div class="pin-sub" id="pinSubtitle">Introduce tu PIN</div>
   <div class="pin-display" id="pinDisplay">
     <div class="pin-dot filled" id="d0"></div>
@@ -8360,20 +8360,6 @@ if (catSel) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Sin transacciones</div></td></tr>`;
     return;
   }
-  tbody.innerHTML = txs.map(t => `
-    <tr>
-      <td style="color:var(--muted);font-size:12px">${t.fecha}</td>
-      <td>${t.desc}</td>
-      <td><span class="cat-badge">${t.cat}</span></td>
-      <td><span class="tag-type tag-${t.tipo.toLowerCase()}">${t.tipo}</span></td>
-      <td style="color:var(--muted);font-size:12px">${t.cuenta||'—'}</td>
-      <td style="text-align:right"><span class="${t.tipo==='Ingreso'?'amount-pos':'amount-neg'}">${t.tipo==='Ingreso'?'+':'-'}${fmt(t.importe)}</span></td>
-      <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end">
-        <button onclick="editTx(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px" title="Editar">✏️</button>
-        <button onclick="deleteTx(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px" title="Eliminar">✕</button>
-      </td>
-    </tr>
-  `).join('');
   if (_vistaTx === 'resumen') {
     const catData = {};
     txs.filter(t=>t.tipo==='Gasto').forEach(t => {
@@ -8403,6 +8389,20 @@ if (catSel) {
     document.getElementById('tbodyAll').closest('table').parentElement.innerHTML = html;
     return;
   }
+  tbody.innerHTML = txs.map(t => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${t.fecha}</td>
+      <td>${t.desc}</td>
+      <td><span class="cat-badge">${t.cat}</span></td>
+      <td><span class="tag-type tag-${t.tipo.toLowerCase()}">${t.tipo}</span></td>
+      <td style="color:var(--muted);font-size:12px">${t.cuenta||'—'}</td>
+      <td style="text-align:right"><span class="${t.tipo==='Ingreso'?'amount-pos':'amount-neg'}">${t.tipo==='Ingreso'?'+':'-'}${fmt(t.importe)}</span></td>
+      <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end">
+        <button onclick="editTx(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px" title="Editar">✏️</button>
+        <button onclick="deleteTx(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px" title="Eliminar">✕</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 // ===== FUNDS =====
