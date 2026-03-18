@@ -4883,7 +4883,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:20px">
           <div class="form-group" style="margin:0">
             <label class="form-label">Tengo ahora en fondos (€)</label>
-            <input type="number" class="form-input" id="fnd-capital" oninput="calcFondos()" placeholder="63.793 € (tu cartera actual)">
+            <input type="number" class="form-input" id="fnd-capital" oninput="calcFondos()" placeholder="63.793 € (tu cartera actual)">
           </div>
           <div class="form-group" style="margin:0">
             <label class="form-label">Aportación mensual (€)</label>
@@ -8326,7 +8326,13 @@ function setVistaTx(v) {
   document.getElementById('btn-vista-lista').className = v==='lista' ? 'btn btn-gold' : 'btn btn-ghost';
   document.getElementById('btn-vista-resumen').className = v==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
   renderTxTable();
+}
 function renderTxTable() {
+  // Sincronizar botones de vista
+  const btnL = document.getElementById('btn-vista-lista');
+  const btnR = document.getElementById('btn-vista-resumen');
+  if (btnL) btnL.className = _vistaTx==='lista' ? 'btn btn-gold' : 'btn btn-ghost';
+  if (btnR) btnR.className = _vistaTx==='resumen' ? 'btn btn-gold' : 'btn btn-ghost';
   // Poblar selectores dinámicos
   const catSel = document.getElementById('txCatFilter');
   if (catSel) {
@@ -8404,7 +8410,7 @@ function renderTxTable() {
           <span style="font-family:var(--font-mono)">${fmt(catData[cat][m])}</span>
         </div>`;
       });
-      html += `<div style="display:flex;justify-content:space-between;padding:8px 0;ont-size:14px;font-weight:700;border-top:2px solid var(--border);font-weight:600">
+      html += `<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:700;border-top:2px solid var(--border)">
         <span>Total</span>
         <span style="font-family:var(--font-mono);color:var(--accent)">${fmt(total)}</span>
       </div></div>`;
@@ -8436,7 +8442,6 @@ function renderTxTable() {
       </td>
     </tr>
   `).join('');
-}
 }
 // ===== FUNDS =====
 function renderFunds() {
