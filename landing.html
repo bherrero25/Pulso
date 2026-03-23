@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulso — Finanzas personales sin complicaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #faf5ee;
+    --cream2: #f3ece0;
+    --gold: #b8901f;
+    --gold-light: #e8c87a;
+    --text: #2c2416;
+    --muted: #9a8f7e;
+    --green: #3d7a5c;
+    --red: #9b3535;
+    --white: #ffffff;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(250,245,238,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(184,144,31,0.15);
+  }
+
+  .nav-logo {
+    font-family: 'Jost', sans-serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .nav-logo span { color: var(--gold); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .btn-nav {
+    background: var(--text);
+    color: var(--cream);
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .btn-nav:hover { background: var(--gold); color: var(--white); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 60px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(184,144,31,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: -50px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(61,122,92,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    max-width: 580px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-light);
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+  }
+
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(42px, 6vw, 72px);
+    font-weight: 600;
+    line-height: 1.08;
+    margin-bottom: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 48px;
+    font-weight: 300;
+    max-width: 440px;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--white);
+    padding: 16px 36px;
+    border-radius: 4px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: #9a7a18;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(184,144,31,0.3);
+  }
+
+  .btn-secondary {
+    color: var(--text);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s;
+  }
+
+  .btn-secondary:hover { gap: 14px; }
+
+  .hero-visual {
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 52%;
+    padding: 60px;
+    animation: fadeLeft 0.9s 0.2s ease both;
+  }
+
+  .dashboard-mockup {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 32px 80px rgba(44,36,22,0.12), 0 8px 24px rgba(44,36,22,0.06);
+    overflow: hidden;
+    border: 1px solid rgba(44,36,22,0.06);
+  }
+
+  .mockup-header {
+    background: var(--cream);
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--cream2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .mockup-body { padding: 24px; }
+
+  .mockup-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mockup-kpi {
+    background: var(--cream);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--cream2);
+  }
+
+  .mkpi-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .mkpi-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .mkpi-value.green { color: var(--green); }
+  .mkpi-value.red { color: var(--red); }
+  .mkpi-value.gold { color: var(--gold); }
+
+  .mockup-bars { margin-bottom: 16px; }
+
+  .mbar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .mbar-label { font-size: 10px; color: var(--muted); width: 90px; }
+
+  .mbar-track {
+    flex: 1;
+    background: var(--cream2);
+    border-radius: 3px;
+    height: 6px;
+  }
+
+  .mbar-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--gold);
+    transition: width 1s ease;
+  }
+
+  .mbar-val { font-size: 10px; color: var(--text); font-family: monospace; width: 55px; text-align: right; }
+
+  .mockup-txs { }
+
+  .mtx-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cream2);
+    font-size: 11px;
+  }
+
+  .mtx-desc { color: var(--text); }
+  .mtx-cat { color: var(--muted); font-size: 10px; }
+  .mtx-amount { font-family: monospace; }
+  .mtx-amount.neg { color: var(--red); }
+  .mtx-amount.pos { color: var(--green); }
+
+  /* PROBLEMA */
+  .section-problema {
+    padding: 100px 60px;
+    background: var(--text);
+    color: var(--cream);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .section-problema h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 60px;
+    max-width: 600px;
+  }
+
+  .problema-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+
+  .problema-item {
+    padding: 32px;
+    border: 1px solid rgba(250,245,238,0.1);
+    border-radius: 12px;
+  }
+
+  .problema-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    color: rgba(184,144,31,0.3);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .problema-text {
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(250,245,238,0.75);
+    font-weight: 300;
+  }
+
+  /* SOLUCIÓN */
+  .section-solucion {
+    padding: 100px 60px;
+  }
+
+  .solucion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 60px;
+  }
+
+  .solucion-item {
+    padding: 40px 32px;
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid var(--cream2);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .solucion-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(44,36,22,0.08);
+  }
+
+  .solucion-icon {
+    font-size: 36px;
+    margin-bottom: 20px;
+  }
+
+  .solucion-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .solucion-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  /* PESTAÑAS */
+  .section-pestanas {
+    padding: 100px 60px;
+    background: var(--cream2);
+  }
+
+  .pestanas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 60px;
+  }
+
+  .pestana-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(44,36,22,0.06);
+    transition: border-color 0.2s;
+  }
+
+  .pestana-card:hover { border-color: var(--gold-light); }
+
+  .pestana-emoji { font-size: 24px; margin-bottom: 12px; }
+
+  .pestana-name {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .pestana-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* PRIVACIDAD */
+  .section-privacidad {
+    padding: 100px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .privacidad-content h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 600;
+    line-height: 1.15;
+    margin-bottom: 28px;
+  }
+
+  .privacidad-content p {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+
+  .privacidad-puntos {
+    list-style: none;
+    margin-top: 32px;
+  }
+
+  .privacidad-puntos li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--cream2);
+    line-height: 1.5;
+  }
+
+  .privacidad-puntos li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .privacidad-visual {
+    background: var(--text);
+    border-radius: 20px;
+    padding: 48px 40px;
+    color: var(--cream);
+  }
+
+  .priv-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(250,245,238,0.1);
+  }
+
+  .priv-item:last-child { border-bottom: none; }
+
+  .priv-icon { font-size: 28px; flex-shrink: 0; }
+
+  .priv-text-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .priv-text-sub {
+    font-size: 12px;
+    color: rgba(250,245,238,0.5);
+    font-weight: 300;
+  }
+
+  /* PRECIO */
+  .section-precio {
+    padding: 100px 60px;
+    background: var(--cream2);
+    text-align: center;
+  }
+
+  .section-precio h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .section-precio .sub {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 60px;
+  }
+
+  .precio-card {
+    display: inline-block;
+    background: var(--white);
+    border-radius: 20px;
+    padding: 60px 80px;
+    border: 1px solid var(--cream2);
+    box-shadow: 0 16px 48px rgba(44,36,22,0.08);
+    max-width: 480px;
+    width: 100%;
+  }
+
+  .precio-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .precio-period {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .precio-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 40px;
+  }
+
+  .precio-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--cream2);
+  }
+
+  .precio-features li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .precio-nota {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 20px;
+  }
+
+  /* CTA FINAL */
+  .section-cta {
+    padding: 120px 60px;
+    text-align: center;
+    background: var(--text);
+    color: var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-cta::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(184,144,31,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .section-cta h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .section-cta p {
+    font-size: 15px;
+    color: rgba(250,245,238,0.6);
+    margin-bottom: 48px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 60px;
+    border-top: 1px solid var(--cream2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeLeft {
+    from { opacity: 0; transform: translateY(-50%) translateX(40px); }
+    to { opacity: 1; transform: translateY(-50%) translateX(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero { flex-direction: column; padding: 100px 24px 60px; }
+    .hero-visual { position: static; transform: none; width: 100%; padding: 0; margin-top: 48px; animation: fadeUp 0.9s 0.2s ease both; }
+    .problema-grid, .solucion-grid, .pestanas-grid { grid-template-columns: 1fr; }
+    .section-privacidad { grid-template-columns: 1fr; }
+    .section-problema, .section-solucion, .section-pestanas, .section-privacidad, .section-precio, .section-cta { padding: 60px 24px; }
+    footer { flex-direction: column; gap: 12px; text-align: center; padding: 32px 24px; }
+    .precio-card { padding: 40px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">P<span>·</span>ULSO</div>
+  <ul class="nav-links">
+    <li><a href="#como-funciona">Cómo funciona</a></li>
+    <li><a href="#privacidad">Privacidad</a></li>
+    <li><a href="#precio">Precio</a></li>
+    <li><a href="#demo" class="btn-nav">Probar demo</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">Finanzas personales · Para mujeres que gestionan todo</div>
+    <h1>Tu economía,<br><em>sin secretos</em><br>y sin bancos.</h1>
+    <p class="hero-sub">Pulso te ayuda a entender en qué gastas, cuánto ahorras y cómo va tu patrimonio. Sin dar acceso a tu banco. Sin complicaciones.</p>
+    <div class="hero-actions">
+      <a href="#demo" class="btn-primary">Probar gratis 30 días</a>
+      <a href="#como-funciona" class="btn-secondary">Ver cómo funciona →</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="dashboard-mockup">
+      <div class="mockup-header">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-kpis">
+          <div class="mockup-kpi">
+            <div class="mkpi-label">Ingresos</div>
+            <div class="mkpi-value green">4.820 €</div>
+          </div>
+          <div class="mockup-kpi">
+            <div class="mkpi-label">Gastos</div>
+            <div class="mkpi-value red">3.241 €</div>
+          </div>
+          <div class="mockup-kpi">
+            <div class="mkpi-label">Ahorro</div>
+            <div class="mkpi-value gold">1.579 €</div>
+          </div>
+        </div>
+        <div class="mockup-bars">
+          <div class="mbar-row">
+            <div class="mbar-label">Hogar</div>
+            <div class="mbar-track"><div class="mbar-fill" style="width:72%"></div></div>
+            <div class="mbar-val">840 €</div>
+          </div>
+          <div class="mbar-row">
+            <div class="mbar-label">Alimentación</div>
+            <div class="mbar-track"><div class="mbar-fill" style="width:55%"></div></div>
+            <div class="mbar-val">640 €</div>
+          </div>
+          <div class="mbar-row">
+            <div class="mbar-label">Hijos</div>
+            <div class="mbar-track"><div class="mbar-fill" style="width:48%"></div></div>
+            <div class="mbar-val">560 €</div>
+          </div>
+          <div class="mbar-row">
+            <div class="mbar-label">Transporte</div>
+            <div class="mbar-track"><div class="mbar-fill" style="width:32%"></div></div>
+            <div class="mbar-val">370 €</div>
+          </div>
+        </div>
+        <div class="mockup-txs">
+          <div class="mtx-row">
+            <div><div class="mtx-desc">Mercadona</div><div class="mtx-cat">Alimentación</div></div>
+            <div class="mtx-amount neg">−124 €</div>
+          </div>
+          <div class="mtx-row">
+            <div><div class="mtx-desc">Nómina marzo</div><div class="mtx-cat">Ingresos</div></div>
+            <div class="mtx-amount pos">+3.200 €</div>
+          </div>
+          <div class="mtx-row">
+            <div><div class="mtx-desc">Mapfre seguro hogar</div><div class="mtx-cat">Seguros</div></div>
+            <div class="mtx-amount neg">−478 €</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section class="section-problema" id="como-funciona">
+  <div class="section-label">El problema</div>
+  <h2>Sabes que el dinero se va. Pero no exactamente a dónde.</h2>
+  <div class="problema-grid">
+    <div class="problema-item reveal">
+      <div class="problema-num">01</div>
+      <div class="problema-text">Cada mes termina igual: gasté más de lo que pensaba, y no sé en qué.</div>
+    </div>
+    <div class="problema-item reveal">
+      <div class="problema-num">02</div>
+      <div class="problema-text">Las apps del banco son complicadas, dan miedo y piden demasiado acceso.</div>
+    </div>
+    <div class="problema-item reveal">
+      <div class="problema-num">03</div>
+      <div class="problema-text">Llevas la economía de toda la familia pero nadie te da una herramienta a tu medida.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUCIÓN -->
+<section class="section-solucion">
+  <div class="section-label">La solución</div>
+  <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4vw,52px);font-weight:600;line-height:1.15;max-width:560px">Pulso es tu cuadro de mando financiero personal.</h2>
+  <div class="solucion-grid">
+    <div class="solucion-item reveal">
+      <div class="solucion-icon">📥</div>
+      <div class="solucion-title">Tú controlas la entrada</div>
+      <div class="solucion-desc">Subes el extracto de tu banco o añades los movimientos tú misma. Sin accesos, sin permisos, sin sorpresas.</div>
+    </div>
+    <div class="solucion-item reveal">
+      <div class="solucion-icon">📊</div>
+      <div class="solucion-title">Todo de un vistazo</div>
+      <div class="solucion-desc">Ingresos, gastos, ahorro, inversiones, seguros y patrimonio. Todo en un mismo sitio, actualizado al momento.</div>
+    </div>
+    <div class="solucion-item reveal">
+      <div class="solucion-icon">🔒</div>
+      <div class="solucion-title">Tus datos son tuyos</div>
+      <div class="solucion-desc">Nadie más los ve. Puedes exportarlos cuando quieras. Y cancelar cuando quieras, sin permanencia.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PESTAÑAS -->
+<section class="section-pestanas">
+  <div class="section-label">Qué incluye</div>
+  <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(28px,3vw,42px);font-weight:600;line-height:1.2">Todo lo que necesitas para llevar tus finanzas.</h2>
+  <div class="pestanas-grid">
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">📋</div>
+      <div class="pestana-name">Transacciones</div>
+      <div class="pestana-desc">Todos tus movimientos organizados por categoría, cuenta y mes.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">📈</div>
+      <div class="pestana-name">Inversiones</div>
+      <div class="pestana-desc">Fondos y cartera con rentabilidad, TIR y semáforos de rendimiento.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">💰</div>
+      <div class="pestana-name">Tesorería</div>
+      <div class="pestana-desc">Flujos de caja mensuales y control de efectivo separado.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">🎯</div>
+      <div class="pestana-name">Ahorro</div>
+      <div class="pestana-desc">Metas de ahorro con cuotas mensuales y seguimiento de progreso.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">🏛</div>
+      <div class="pestana-name">Patrimonio</div>
+      <div class="pestana-desc">Activos y pasivos. Tu riqueza neta calculada automáticamente.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">🛡</div>
+      <div class="pestana-name">Seguros</div>
+      <div class="pestana-desc">Vencimientos con alertas anticipadas para no pillarte desprevenida.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">✈️</div>
+      <div class="pestana-name">Viajes</div>
+      <div class="pestana-desc">Planifica y controla el presupuesto de cada viaje por separado.</div>
+    </div>
+    <div class="pestana-card reveal">
+      <div class="pestana-emoji">🗓</div>
+      <div class="pestana-name">Agenda</div>
+      <div class="pestana-desc">Pagos, citas y eventos con recordatorios para los próximos 7 días.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACIDAD -->
+<section class="section-privacidad" id="privacidad">
+  <div class="privacidad-content reveal">
+    <div class="section-label">Privacidad</div>
+    <h2>Tus datos financieros no son nuestro negocio.</h2>
+    <p>Pulso no se conecta a tu banco. No pide tus credenciales. No analiza tus movimientos para venderte nada.</p>
+    <p>Tú subes lo que quieres. Tú controlas lo que hay. Y puedes descargarlo todo en cualquier momento.</p>
+    <ul class="privacidad-puntos">
+      <li>Sin conexión a tu banco ni a ninguna entidad financiera</li>
+      <li>Tus datos guardados de forma segura, separados del resto de usuarias</li>
+      <li>Exportación completa en cualquier momento con un clic</li>
+      <li>Sin publicidad. Sin venta de datos. Nunca.</li>
+      <li>Cancela cuando quieras, sin permanencia ni penalización</li>
+    </ul>
+  </div>
+  <div class="privacidad-visual reveal">
+    <div class="priv-item">
+      <div class="priv-icon">🔒</div>
+      <div>
+        <div class="priv-text-title">Datos cifrados</div>
+        <div class="priv-text-sub">Tu información viaja y se almacena siempre cifrada</div>
+      </div>
+    </div>
+    <div class="priv-item">
+      <div class="priv-icon">👁️‍🗨️</div>
+      <div>
+        <div class="priv-text-title">Nadie más los ve</div>
+        <div class="priv-text-sub">Ni siquiera nosotras accedemos a tus datos personales</div>
+      </div>
+    </div>
+    <div class="priv-item">
+      <div class="priv-icon">📦</div>
+      <div>
+        <div class="priv-text-title">Exportación total</div>
+        <div class="priv-text-sub">Descarga todo en JSON cuando quieras</div>
+      </div>
+    </div>
+    <div class="priv-item">
+      <div class="priv-icon">🚫</div>
+      <div>
+        <div class="priv-text-title">Sin publicidad</div>
+        <div class="priv-text-sub">El modelo de negocio es la suscripción, no tus datos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRECIO -->
+<section class="section-precio" id="precio">
+  <div class="section-label">Precio</div>
+  <h2>Simple y sin letra pequeña.</h2>
+  <p class="sub">Un precio. Todo incluido. Sin sorpresas.</p>
+  <div class="precio-card reveal">
+    <div class="precio-amount">6€</div>
+    <div class="precio-period">al mes · IVA incluido</div>
+    <ul class="precio-features">
+      <li>Acceso completo a todas las funciones</li>
+      <li>Disponible en móvil, tablet y ordenador</li>
+      <li>Actualizaciones incluidas</li>
+      <li>Exportación de datos en cualquier momento</li>
+      <li>Soporte por email</li>
+      <li>30 días de prueba gratis, sin tarjeta</li>
+    </ul>
+    <a href="#demo" class="btn-primary" style="display:block;text-align:center">Empezar gratis</a>
+    <p class="precio-nota">Sin permanencia · Cancela cuando quieras</p>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="section-cta" id="demo">
+  <h2>Empieza a entender<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold-light)">tu dinero</em> hoy.</h2>
+  <p>30 días gratis. Sin tarjeta de crédito. Sin complicaciones.</p>
+  <a href="#" class="btn-primary" style="font-size:13px;padding:18px 48px">Probar Pulso gratis →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div style="font-family:'Jost',sans-serif;letter-spacing:0.2em;font-size:13px">P · ULSO</div>
+  <div>© 2026 Pulso · Finanzas personales</div>
+  <div style="display:flex;gap:24px">
+    <a href="#" style="color:var(--muted);text-decoration:none">Privacidad</a>
+    <a href="#" style="color:var(--muted);text-decoration:none">Contacto</a>
+  </div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
