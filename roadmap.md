@@ -97,3 +97,38 @@ Objetivo: producto vendible a otras usuarias
 ---
 
 *Última actualización: marzo 2026*
+
+---
+
+## Línea de producto — Pulso Joven
+Estado: 💡 En definición
+Objetivo: app de finanzas para jóvenes de 18-28 años, simple y visual
+
+### Perfil de usuaria/o
+- 20-25 años, estudiante o primer empleo
+- Pregunta clave: "¿llego a fin de mes?" y "¿cuándo puedo irme de viaje?"
+- Usa el móvil para todo, espera diseño moderno y rápido
+- Puede tener primeras inversiones (fondos indexados)
+
+### Pestañas previstas
+- **Inicio** — semáforo del mes, saldo actual, próxima meta de ahorro
+- **Gastos e ingresos** — categorías visuales con emoji, simple
+- **Presupuesto** — límite por categoría (ocio, comida, transporte...)
+- **Viajes** — meta de ahorro con cuenta atrás y barra de progreso
+- **Metas** — ahorro para coche, piso, gadget, experiencias...
+- **Inversiones** — opcional, para quienes empiezan con fondos indexados
+
+### Lo que NO tendría
+- Seguros, leasing, bonus anual, hipoteca, hijos, patrimonio complejo
+
+### Diferencias de producto
+- Diseño diferente al Pulso adulto — más colorido, mobile-first, moderno
+- Precio menor o freemium — 3€/mes o gratis con límite de transacciones
+- Posiblemente marca diferente (no necesariamente "Pulso Juvenil")
+
+### Pendiente de definir
+- Nombre de marca
+- Pestañas definitivas — darle una vuelta en profundidad
+- Si comparte base de código con Pulso adulto o es independiente
+- Modelo de precio exacto
+
