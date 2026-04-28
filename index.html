@@ -10789,7 +10789,7 @@ function renderCierre() {
   setEl('cierre-gastos', fmt(gastos), 'var(--red)');
   setEl('cierre-ahorro', fmt(ahorro), ahorro>=0?'var(--green)':'var(--red)');
   setEl('cierre-ahorro-pct', `Tasa de ahorro: ${ahorroP}%`);
-  const totalBudget = Object.values(budgets).reduce((a,b)=>a+b,0);
+  const totalBudget = const totalBudget = Object.keys(budgets).filter(cat => txMes.some(t => t.cat === cat && t.tipo === 'Gasto')).reduce((a, cat) => a + budgets[cat], 0);((a,b)=>a+b,0);
   const diffBudget  = totalBudget - gastos;
   setEl('cierre-vs-budget', fmt(Math.abs(diffBudget)), diffBudget>=0?'var(--green)':'var(--red)');
   setEl('cierre-vs-budget-sub', diffBudget>=0 ? `${fmt(diffBudget)} por debajo del presupuesto` : `${fmt(-diffBudget)} por encima del presupuesto`);
@@ -12088,18 +12088,18 @@ if (window.visualViewport) {
     if(netoDiv){
       netoDiv.innerHTML =
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">'+
-        '<div class="jub-metric ok"><div class="jub-metric-label">Neto mensual estimado</div><div class="jub-metric-value">'+Math.round(neto67.neto).toLocaleString('es-ES')+'&thinsp;&euro;</div><div class="jub-metric-sub">después de IRPF y SS</div></div>'+
+        '<div class="jub-metric ok"><div class="jub-metric-label">Neto mensual estimado</div><div class="jub-metric-value">'+Math.round(neto67.neto).toLocaleString('es-ES')+'&thinsp;&euro;</div><div class="jub-metric-sub">despuï¿½s de IRPF y SS</div></div>'+
         '<div class="jub-metric warn"><div class="jub-metric-label">IRPF anual estimado</div><div class="jub-metric-value">'+Math.round(neto67.irpfAnual).toLocaleString('es-ES')+'&thinsp;&euro;</div><div class="jub-metric-sub">tipo efectivo '+neto67.tipo.toFixed(1)+'%</div></div>'+
         '<div class="jub-metric"><div class="jub-metric-label">Cotiz. SS pensionista</div><div class="jub-metric-value">'+Math.round(neto67.ssAnual).toLocaleString('es-ES')+'&thinsp;&euro;</div><div class="jub-metric-sub">~1.55% anual</div></div>'+
         '</div>'+
         '<div class="jub-info" style="font-size:12px;margin-bottom:4px;">'
         +'<strong style="color:var(--text);">Desglose fiscal a los 67</strong><br><br>'
-        +'Pensión bruta: <strong>'+Math.round(p67*pagas).toLocaleString('es-ES')+'&nbsp;&euro;/año</strong> &nbsp;·&nbsp; '
-        +'IRPF: <strong>'+Math.round(neto67.irpfAnual).toLocaleString('es-ES')+'&nbsp;&euro;</strong> &nbsp;·&nbsp; '
+        +'Pensiï¿½n bruta: <strong>'+Math.round(p67*pagas).toLocaleString('es-ES')+'&nbsp;&euro;/aï¿½o</strong> &nbsp;ï¿½&nbsp; '
+        +'IRPF: <strong>'+Math.round(neto67.irpfAnual).toLocaleString('es-ES')+'&nbsp;&euro;</strong> &nbsp;ï¿½&nbsp; '
         +'SS: <strong>'+Math.round(neto67.ssAnual).toLocaleString('es-ES')+'&nbsp;&euro;</strong><br><br>'
-        +'Neto anual: <strong style="color:var(--green,#16a34a);">'+Math.round(neto67.netoAnual).toLocaleString('es-ES')+'&nbsp;&euro;</strong> &nbsp;·&nbsp; '
+        +'Neto anual: <strong style="color:var(--green,#16a34a);">'+Math.round(neto67.netoAnual).toLocaleString('es-ES')+'&nbsp;&euro;</strong> &nbsp;ï¿½&nbsp; '
         +'Neto mensual: <strong style="color:var(--green,#16a34a);">'+Math.round(neto67.neto).toLocaleString('es-ES')+'&nbsp;&euro;</strong><br><br>'
-        +'<span style="font-size:11px;color:var(--muted);">IRPF calculado según tramos estatales 2024 más estimación autonómica media. No incluye deducciones personales ni circunstancias particulares. Consulta un asesor fiscal.</span>'
+        +'<span style="font-size:11px;color:var(--muted);">IRPF calculado segï¿½n tramos estatales 2024 mï¿½s estimaciï¿½n autonï¿½mica media. No incluye deducciones personales ni circunstancias particulares. Consulta un asesor fiscal.</span>'
         +'</div>';
     }
 
@@ -12358,9 +12358,9 @@ if (window.visualViewport) {
 
     resumen.textContent = arr.length===0 ? 'Sin tareas' :
       pendientes + ' pendiente' + (pendientes!==1?'s':'') +
-      (hoy_count>0 ? ' · ' + hoy_count + ' para hoy' : '') +
-      (venc>0 ? ' · ' + venc + ' vencida' + (venc!==1?'s':'') : '') +
-      (hechas>0 ? ' · ' + hechas + ' hecha' + (hechas!==1?'s':'') : '');
+      (hoy_count>0 ? ' ï¿½ ' + hoy_count + ' para hoy' : '') +
+      (venc>0 ? ' ï¿½ ' + venc + ' vencida' + (venc!==1?'s':'') : '') +
+      (hechas>0 ? ' ï¿½ ' + hechas + ' hecha' + (hechas!==1?'s':'') : '');
 
     btnLimpiar.style.display = hechas>0 ? 'inline-block' : 'none';
 
