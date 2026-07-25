@@ -756,32 +756,18 @@
 </head>
 <body>
 
-<!-- PIN LOCK SCREEN -->
+<!-- LOGIN SCREEN -->
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
-  <div class="pin-sub" id="pinSubtitle">Introduce tu PIN</div>
-  <div class="pin-display" id="pinDisplay">
-    <div class="pin-dot filled" id="d0"></div>
-    <div class="pin-dot filled" id="d1"></div>
-    <div class="pin-dot filled" id="d2"></div>
-    <div class="pin-dot filled" id="d3"></div>
-  </div>
-  <div class="pin-pad">
-    <button class="pin-btn" onclick="pinPress(&#39;1&#39;)">1</button>
-    <button class="pin-btn" onclick="pinPress(&#39;2&#39;)">2</button>
-    <button class="pin-btn" onclick="pinPress(&#39;3&#39;)">3</button>
-    <button class="pin-btn" onclick="pinPress(&#39;4&#39;)">4</button>
-    <button class="pin-btn" onclick="pinPress(&#39;5&#39;)">5</button>
-    <button class="pin-btn" onclick="pinPress(&#39;6&#39;)">6</button>
-    <button class="pin-btn" onclick="pinPress(&#39;7&#39;)">7</button>
-    <button class="pin-btn" onclick="pinPress(&#39;8&#39;)">8</button>
-    <button class="pin-btn" onclick="pinPress(&#39;9&#39;)">9</button>
-    <div class="pin-btn empty"></div>
-    <button class="pin-btn" onclick="pinPress(&#39;0&#39;)">0</button>
-    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+  <div class="pin-sub">Inicia sesión para continuar</div>
+  <div style="display:flex;flex-direction:column;gap:10px;width:270px">
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe@cypa.es"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
+    <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
+    <button class="pin-btn" style="width:100%;height:48px;font-size:16px" onclick="doLogin()">Entrar</button>
   </div>
   <div class="pin-error" id="pinError"></div>
-  <div class="pin-setup-hint" id="pinHint"></div>
 </div>
 
 <header>
@@ -6893,86 +6879,73 @@
 </div>
 
 <script>
-// ===== PIN SYSTEM =====
-let pinBuffer = '';
-let pinMode = 'check'; // 'check' | 'setup' | 'confirm'
-let pinSetupFirst = '';
+// ===== LOGIN (Supabase Auth) =====
+let _refreshTimer = null;
+function showLogin() { document.getElementById('pinScreen').classList.remove('hidden'); }
+function hideLogin() { document.getElementById('pinScreen').classList.add('hidden'); }
 
-function initPin() {
-  const stored = localStorage.getItem('wl_pin');
-  if (stored) {
-    pinMode = 'check';
-    document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';
-    document.getElementById('pinHint').textContent = '';
-    document.getElementById('pinScreen').classList.remove('hidden');
-  } else {
-    pinMode = 'setup';
-    document.getElementById('pinSubtitle').textContent = 'Crea tu PIN (4 dígitos)';
-    document.getElementById('pinHint').textContent = '';
-    document.getElementById('pinScreen').classList.remove('hidden');
-  }
+function aplicarSesion(d) {
+  SB_TOKEN = d.access_token;
+  localStorage.setItem('wl_rt', d.refresh_token);
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(refrescarSesion, Math.max(((d.expires_in || 3600) - 120) * 1000, 60000));
 }
 
-function pinPress(digit) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += digit;
-  updatePinDots();
-  if (pinBuffer.length === 4) {
-    setTimeout(() => handlePinComplete(), 120);
-  }
-}
-
-function pinDel() {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots();
-  document.getElementById('pinError').textContent = '';
-}
-
-function updatePinDots() {
-  for (let i = 0; i < 4; i++) {
-    document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
-  }
-}
-
-function handlePinComplete() {
-  const stored = localStorage.getItem('wl_pin');
-  if (pinMode === 'check') {
-    if (pinBuffer === stored) {
-      document.getElementById('pinScreen').classList.add('hidden');
-    } else {
-      showPinError('PIN incorrecto, inténtalo de nuevo');
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('pinError');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Pon email y contraseña'; return; }
+  try {
+    const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.access_token) {
+      const m = d.error_description || d.msg || '';
+      err.textContent = m.includes('Invalid login') ? 'Email o contraseña incorrectos'
+        : m.includes('Email not confirmed') ? 'Usuario sin confirmar — márcalo como confirmado en Supabase'
+        : (m || 'No se pudo entrar');
+      return;
     }
-  } else if (pinMode === 'setup') {
-    localStorage.setItem('wl_pin', pinBuffer);
-    document.getElementById('pinScreen').classList.add('hidden');
-  }
+    aplicarSesion(d);
+    hideLogin();
+    if (!_datosCargados) await cargarTodoTrasLogin();
+  } catch (e) { err.textContent = 'Sin conexión — inténtalo de nuevo'; }
 }
 
-function showPinError(msg) {
-  document.getElementById('pinError').textContent = msg;
-  document.getElementById('pinDisplay').classList.add('pin-shake');
-  setTimeout(() => document.getElementById('pinDisplay').classList.remove('pin-shake'), 400);
-  pinBuffer = '';
-  updatePinDots();
+// devuelve 'ok' | 'invalid' | 'offline'
+async function refrescarSesion() {
+  const rt = localStorage.getItem('wl_rt');
+  if (!rt) return 'invalid';
+  try {
+    const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.access_token) { localStorage.removeItem('wl_rt'); SB_TOKEN = null; return 'invalid'; }
+    aplicarSesion(d);
+    return 'ok';
+  } catch (e) { return 'offline'; }
 }
 
 function lockDashboard() {
-  const stored = localStorage.getItem('wl_pin');
-  if (!stored) { alert('No tienes PIN configurado todavía.'); return; }
-  pinMode = 'check';
-  pinBuffer = '';
-  updatePinDots();
-  document.getElementById('pinSubtitle').textContent = 'Introduce tu PIN';
-  document.getElementById('pinError').textContent = '';
-  document.getElementById('pinHint').textContent = '';
-  document.getElementById('pinScreen').classList.remove('hidden');
+  clearTimeout(_refreshTimer);
+  SB_TOKEN = null;
+  localStorage.removeItem('wl_rt');
+  const p = document.getElementById('loginPass'); if (p) p.value = '';
+  showLogin();
 }
 
-// Keyboard support for PIN
+// Enter para entrar
 document.addEventListener('keydown', e => {
   if (document.getElementById('pinScreen').classList.contains('hidden')) return;
-  if (e.key >= '0' && e.key <= '9') pinPress(e.key);
-  if (e.key === 'Backspace') pinDel();
+  if (e.key === 'Enter') doLogin();
 });
 
 function downloadSelf() {
@@ -7095,11 +7068,13 @@ function importJSON(input) {
 const SB_URL = 'https://thzurasttoyqphepvhlc.supabase.co';
 const SB_KEY = 'sb_publishable_M2M2PNu2SwBuIdFtLDgNFg_1gtMdZiR';
 const SB_USER = 'b4327b77-4435-4521-868a-a6f60bd4dfd1';
+let SB_TOKEN = null;   // token de sesión tras el login
+let _datosCargados = false;
 
 async function sbGet(tabla) {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/${tabla}?user_id=eq.${SB_USER}&select=*`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     return r.ok ? await r.json() : null;
   } catch(e) { return null; }
@@ -7111,7 +7086,7 @@ async function sbUpsert(tabla, data) {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_KEY}`,
+        'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates'
       },
@@ -7124,7 +7099,7 @@ async function sbDelete(tabla, filtro) {
   try {
     await fetch(`${SB_URL}/rest/v1/${tabla}?${filtro}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
   } catch(e) { console.warn('Supabase delete error:', e); }
 }
@@ -7366,7 +7341,7 @@ const COLORS = ['#8b6914','#3d7a5c','#3d5a8a','#9b3535','#7a5c8b','#b8901f','#2d
 async function sbCierresCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.cierres&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7374,7 +7349,7 @@ async function sbCierresCargar() {
       const seed = Array.isArray(historicoCierres) ? historicoCierres : [];
       await fetch(`${SB_URL}/rest/v1/pulso_config`, {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ user_id: SB_USER, key: 'cierres', data: { items: seed } })
       });
       return seed;
@@ -7388,7 +7363,7 @@ async function sbCierresSync() {
   try {
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.cierres`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { items: historicoCierres }, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbCierresSync error:', e); }
@@ -7398,7 +7373,7 @@ async function sbCierresSync() {
 async function sbCarteraHistCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.historico_cartera&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7407,7 +7382,7 @@ async function sbCarteraHistCargar() {
       const seed = Array.isArray(historicoCartera) ? historicoCartera : [];
       await fetch(`${SB_URL}/rest/v1/pulso_config`, {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ user_id: SB_USER, key: 'historico_cartera', data: { items: seed } })
       });
       return seed;
@@ -7421,7 +7396,7 @@ async function sbCarteraHistSync() {
   try {
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.historico_cartera`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { items: historicoCartera }, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbCarteraHistSync error:', e); }
@@ -7433,7 +7408,7 @@ async function sbFundsSync() {
     // Borrar todos los fondos del usuario y reinsertar
     await fetch(`${SB_URL}/rest/v1/pulso_funds?user_id=eq.${SB_USER}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (funds.length === 0) return;
     const rows = funds.map(f => ({
@@ -7449,7 +7424,7 @@ async function sbFundsSync() {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_KEY}`,
+        'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates'
       },
@@ -7462,7 +7437,7 @@ async function sbFundsSync() {
 async function sbFundsCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_funds?user_id=eq.${SB_USER}&order=nombre.asc`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7509,7 +7484,7 @@ async function sbGastosExtraSync() {
     });
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.gastos_extra`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { items }, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbGastosExtraSync error:', e); }
@@ -7518,7 +7493,7 @@ async function sbGastosExtraSync() {
 async function sbGastosExtraCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.gastos_extra&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7552,7 +7527,7 @@ let _tesoreriaRaw = {};
 async function sbTesoreriaCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.tesoreria&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7568,7 +7543,7 @@ async function sbTesoreriaSync() {
     _tesoreriaRaw = nuevoData;
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.tesoreria`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: nuevoData, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbTesoreriaSync error:', e); }
@@ -7579,7 +7554,7 @@ let _patrimonioRaw = {};
 async function sbPatrimonioCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.patrimonio&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7599,7 +7574,7 @@ async function sbPatrimonioSync() {
     _patrimonioRaw = nuevoData;
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.patrimonio`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: nuevoData, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbPatrimonioSync error:', e); }
@@ -7610,7 +7585,7 @@ let _ahorroRaw = {};
 async function sbMetaAhorroCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=in.(ahorro,metaAhorro)&select=key,data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7630,7 +7605,7 @@ async function sbMetaAhorroSync(valor) {
     const v = parseFloat(valor) || 0;
     const ahorroData = Object.assign({}, _ahorroRaw, { meta_mensual: v });
     _ahorroRaw = ahorroData;
-    const h = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+    const h = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.ahorro`, {
       method: 'PATCH', headers: h, body: JSON.stringify({ data: ahorroData, updated_at: new Date().toISOString() })
     });
@@ -7645,7 +7620,7 @@ async function sbPresupuestosSync() {
   try {
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.presupuestos`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: budgets, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbPresupuestosSync error:', e); }
@@ -7654,7 +7629,7 @@ async function sbPresupuestosSync() {
 async function sbPresupuestosCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.presupuestos&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7669,7 +7644,7 @@ async function sbHijosSync() {
     const n = (hijosConfig || []).map(h => ({ nombre: h.nombre, categorias: h.categorias }));
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.analisis_n`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { n }, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbHijosSync error:', e); }
@@ -7678,7 +7653,7 @@ async function sbHijosSync() {
 async function sbHijosCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.analisis_n&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -7690,9 +7665,23 @@ async function sbHijosCargar() {
 // ===== INIT =====
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
-  initPin();
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('tx-fecha').value = today;
+  const sesion = await refrescarSesion();
+  if (sesion === 'ok') { hideLogin(); await cargarTodoTrasLogin(); }
+  else if (sesion === 'offline') { hideLogin(); cargarLocalYRender(); }  // sin red: datos locales del dispositivo
+  else { showLogin(); }
+});
+
+function cargarLocalYRender() {
+  if (!cargarDatosIncrustados()) cargarDesdeLocalStorage();
+  populateMonthFilters(); renderAll(); initLeasing();
+  _unsavedChanges = false; _appLista = true;
+  if (typeof tareasRender === 'function') setTimeout(tareasRender, 300);
+}
+
+async function cargarTodoTrasLogin() {
+  _datosCargados = true;
 
   // Intentar cargar desde Supabase; si falla, usar datos incrustados/localStorage
   const cargadoDesdeNube = await cargarDesdeNube();
@@ -7805,7 +7794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   _unsavedChanges = false;
   _appLista = true;
   if (typeof tareasRender === 'function') setTimeout(tareasRender, 300);
-});
+}
 
 function resetAllData() {
   const opciones = `¿Qué quieres borrar?\n\n1 → Solo transacciones (Airtable)\n2 → Solo fondos (Investing)\n3 → Todo\n\nEscribe 1, 2 o 3:`;
@@ -10002,7 +9991,7 @@ function calcFondos() {   const capitalInput = document.getElementById('fnd-capi
 async function sbNotasCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.notas_comparativa&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -10010,7 +9999,7 @@ async function sbNotasCargar() {
       const seed = localStorage.getItem('wl_notas_comparativa') || '';
       await fetch(`${SB_URL}/rest/v1/pulso_config`, {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ user_id: SB_USER, key: 'notas_comparativa', data: { texto: seed } })
       });
       return seed;
@@ -10023,7 +10012,7 @@ async function sbNotasSync(texto) {
   try {
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.notas_comparativa`, {
       method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { texto: texto }, updated_at: new Date().toISOString() })
     });
   } catch(e) { console.warn('sbNotasSync error:', e); }
@@ -10214,7 +10203,7 @@ async function sbSeguroUpsert(s) {
     await fetch(`${SB_URL}/rest/v1/pulso_seguros`, {
       method: 'POST',
       headers: {
-        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
+        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
       },
       body: JSON.stringify({
@@ -10234,7 +10223,7 @@ async function sbSeguroDelete(id) {
   try {
     await fetch(`${SB_URL}/rest/v1/pulso_seguros?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
   } catch(e) { console.warn('sbSeguroDelete error:', e); }
 }
@@ -10242,7 +10231,7 @@ async function sbSeguroDelete(id) {
 async function sbSegurosCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_seguros?user_id=eq.${SB_USER}&order=vencimiento.asc`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -10570,7 +10559,7 @@ async function sbViajesSync() {
     await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.viajes`, {
       method: 'PATCH',
       headers: {
-        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
+        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -10583,7 +10572,7 @@ async function sbViajesSync() {
 async function sbViajesCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.viajes&select=data`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -11928,7 +11917,7 @@ async function sbAgendaUpsert(evento) {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_KEY}`,
+        'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates'
       },
@@ -11953,7 +11942,7 @@ async function sbAgendaDelete(id) {
   try {
     await fetch(`${SB_URL}/rest/v1/agenda_eventos?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
   } catch(e) { console.warn('sbAgendaDelete error:', e); }
 }
@@ -11961,7 +11950,7 @@ async function sbAgendaDelete(id) {
 async function sbAgendaCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/agenda_eventos?user_id=eq.${SB_USER}&order=fecha.asc`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -12264,7 +12253,7 @@ let bonusAnioSeleccionado = null;
 async function sbBonusCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/bonus_gastos?user_id=eq.${SB_USER}&order=anio.asc,fecha.asc`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
     if (!r.ok) return null;
     const rows = await r.json();
@@ -12292,7 +12281,7 @@ async function sbBonusUpsert(item) {
     await fetch(`${SB_URL}/rest/v1/bonus_gastos`, {
       method: 'POST',
       headers: {
-        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
+        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
         'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
       },
       body: JSON.stringify({
@@ -12319,7 +12308,7 @@ async function sbBonusDelete(id) {
   try {
     await fetch(`${SB_URL}/rest/v1/bonus_gastos?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
   } catch(e) { console.warn('sbBonusDelete error:', e); }
 }
@@ -12328,7 +12317,7 @@ async function sbBonusDeleteAnio(anio) {
   try {
     await fetch(`${SB_URL}/rest/v1/bonus_gastos?user_id=eq.${SB_USER}&anio=eq.${anio}`, {
       method: 'DELETE',
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
   } catch(e) { console.warn('sbBonusDeleteAnio error:', e); }
 }
@@ -12606,7 +12595,7 @@ function guardarBonusAnio() {
   saveBonus();
   // Buscar si ya existe fila config para ese año en Supabase
   fetch(`${SB_URL}/rest/v1/bonus_gastos?user_id=eq.${SB_USER}&anio=eq.${anio}&tipo=eq.config&select=id`, {
-    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
   }).then(r=>r.json()).then(rows => {
     if (rows && rows.length > 0) configItem.id = rows[0].id;
     sbBonusUpsert(configItem);
@@ -13494,7 +13483,7 @@ if (window.visualViewport) {
   async function sbTareasCargar() {
     try {
       const r = await fetch(`${SB_URL}/rest/v1/tareas?user_id=eq.${SB_USER}&order=created_at.asc`, {
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
       });
       if (!r.ok) return null;
       const rows = await r.json();
@@ -13514,7 +13503,7 @@ if (window.visualViewport) {
         method: 'POST',
         headers: {
           'apikey': SB_KEY,
-          'Authorization': `Bearer ${SB_KEY}`,
+          'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates'
         },
@@ -13533,7 +13522,7 @@ if (window.visualViewport) {
     try {
       await fetch(`${SB_URL}/rest/v1/tareas?id=eq.${id}&user_id=eq.${SB_USER}`, {
         method: 'DELETE',
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
       });
     } catch(e) { console.warn('sbTareaDelete error:', e); }
   }
