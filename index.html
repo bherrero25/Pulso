@@ -2918,8 +2918,12 @@ function downloadSelf() {
     historicoCierres: historicoCierres || [],
     agendaEventos: agendaEventos || [],
     bonusAnual: bonusAnual || [],
+    seguros: (typeof seguros !== 'undefined' && seguros) || [],
+    tareas: (function(){ try { return JSON.parse(localStorage.getItem('pulso_tareas_v2') || '[]'); } catch(e) { return []; } })(),
+    retiradasEfectivo: (typeof retiradaEfectivo !== 'undefined' && retiradaEfectivo) || [],
+    gastosEfectivo: (typeof gastosEfectivoLocal !== 'undefined' && gastosEfectivoLocal) || [],
+    jubilacion: (function(){ try { return JSON.parse(localStorage.getItem('pulso_jubilacion_v1') || 'null'); } catch(e) { return null; } })(),
     metaAhorro: localStorage.getItem('wl_meta_ahorro') || 0,
-    pin: localStorage.getItem('wl_pin') || '',
     theme: localStorage.getItem('wl_theme') || 'light'
   };
   // Escapar </scrip' + 't> dentro del JSON para evitar que rompa el tag
@@ -3042,9 +3046,23 @@ async function sbGet(tabla) {
   } catch(e) { return null; }
 }
 
+// Aviso rojo persistente cuando un guardado en la nube falla (antes fallaban en silencio)
+function avisarErrorSync(contexto) {
+  let bar = document.getElementById('sync-error-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'sync-error-bar';
+    bar.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;padding:10px 16px;border-radius:10px;display:flex;gap:12px;align-items:center;z-index:9999;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
+    bar.innerHTML = '<span id="sync-error-msg"></span><button onclick="this.parentElement.style.display=\'none\'" style="background:none;border:none;color:#fff;font-weight:700;cursor:pointer;font-size:15px">✕</button>';
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('#sync-error-msg').textContent = `⚠️ No se pudo guardar en la nube (${contexto}). El cambio sigue en este dispositivo — comprueba la conexión y reinténtalo.`;
+  bar.style.display = 'flex';
+}
+
 async function sbUpsert(tabla, data) {
   try {
-    await fetch(`${SB_URL}/rest/v1/${tabla}`, {
+    const r = await fetch(`${SB_URL}/rest/v1/${tabla}`, {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
@@ -3054,23 +3072,35 @@ async function sbUpsert(tabla, data) {
       },
       body: JSON.stringify(data)
     });
-  } catch(e) { console.warn('Supabase write error:', e); }
+    if (!r.ok) {
+      console.warn('Supabase write error:', tabla, r.status, await r.text().catch(()=>''));
+      avisarErrorSync(tabla);
+      return false;
+    }
+    return true;
+  } catch(e) { console.warn('Supabase write error:', e); avisarErrorSync(tabla); return false; }
 }
 
 async function sbDelete(tabla, filtro) {
   try {
-    await fetch(`${SB_URL}/rest/v1/${tabla}?${filtro}`, {
+    const r = await fetch(`${SB_URL}/rest/v1/${tabla}?${filtro}`, {
       method: 'DELETE',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
-  } catch(e) { console.warn('Supabase delete error:', e); }
+    if (!r.ok) {
+      console.warn('Supabase delete error:', tabla, r.status);
+      avisarErrorSync(tabla);
+      return false;
+    }
+    return true;
+  } catch(e) { console.warn('Supabase delete error:', e); avisarErrorSync(tabla); return false; }
 }
 
 async function guardarEnNube() {
   mostrarEstadoSync('⏳ Guardando...');
   try {
-    // Guardar transacciones: borrar las del usuario y reinsertar
-    await sbDelete('transactions', `user_id=eq.${SB_USER}`);
+    // 1) Insertar/actualizar TODO primero, sin borrar nada. Si un lote falla, se aborta
+    //    y la nube conserva lo que tenía (nunca puede quedar vacía a medias).
     if (transactions.length > 0) {
       const rows = transactions.map(t => ({
         id: t.id,
@@ -3082,10 +3112,23 @@ async function guardarEnNube() {
         cat: t.cat || '',
         cuenta: t.cuenta || ''
       }));
-      // Insertar en lotes de 500
       for (let i = 0; i < rows.length; i += 500) {
-        await sbUpsert('transactions', rows.slice(i, i + 500));
+        const ok = await sbUpsert('transactions', rows.slice(i, i + 500));
+        if (!ok) throw new Error(`fallo guardando transacciones (lote ${i/500 + 1})`);
       }
+    }
+
+    // 2) Solo con todo ya guardado: eliminar de la nube las que borraste localmente
+    const rIds = await fetch(`${SB_URL}/rest/v1/transactions?user_id=eq.${SB_USER}&select=id`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
+    });
+    if (!rIds.ok) throw new Error('no se pudo verificar el estado de la nube');
+    const idsNube = await rIds.json();
+    const idsLocales = new Set(transactions.map(t => String(t.id)));
+    const sobrantes = idsNube.map(x => String(x.id)).filter(id => !idsLocales.has(id));
+    for (let i = 0; i < sobrantes.length; i += 100) {
+      const ok = await sbDelete('transactions', `user_id=eq.${SB_USER}&id=in.(${sobrantes.slice(i, i + 100).join(',')})`);
+      if (!ok) throw new Error('no se pudieron eliminar transacciones antiguas de la nube');
     }
 
     // Guardar config (todo lo demás) en una sola fila JSON
@@ -3099,12 +3142,13 @@ async function guardarEnNube() {
         // bonusAnual → tabla bonus_gastos
         metaAhorro: localStorage.getItem('wl_meta_ahorro') || 0,
         jubilacion: (function(){ try{ return JSON.parse(localStorage.getItem('pulso_jubilacion_v1')||'null'); }catch(e){return null;} })(),
-        pin: localStorage.getItem('wl_pin') || '',
+        // pin: eliminado — el PIN antiguo ya no se sube a la nube
         theme: localStorage.getItem('wl_theme') || 'light'
       },
       updated_at: new Date().toISOString()
     };
-    await sbUpsert('config', configData);
+    const okCfg = await sbUpsert('config', configData);
+    if (!okCfg) throw new Error('fallo guardando la configuración');
 
     mostrarEstadoSync('☁️ Guardado');
     _unsavedChanges = false;
@@ -3299,34 +3343,35 @@ const COLORS = ['#8b6914','#3d7a5c','#3d5a8a','#9b3535','#7a5c8b','#b8901f','#2d
 // ===== FONDOS — SUPABASE DIRECTO =====
 async function sbFundsSync() {
   try {
-    // Borrar todos los fondos del usuario y reinsertar
-    await fetch(`${SB_URL}/rest/v1/pulso_funds?user_id=eq.${SB_USER}`, {
-      method: 'DELETE',
+    // 1) Guardar primero, sin borrar nada (si falla, la nube conserva lo que tenía)
+    if (funds.length > 0) {
+      const rows = funds.map(f => ({
+        id: f.id,
+        user_id: SB_USER,
+        nombre: f.nombre,
+        ticker: f.ticker || '',
+        gestora: f.gestora || '',
+        coste: f.coste || 0,
+        valor: f.valor || 0
+      }));
+      const ok = await sbUpsert('pulso_funds', rows);
+      if (!ok) return;
+    }
+    // 2) Solo después: borrar de la nube los fondos que ya no existen localmente
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_funds?user_id=eq.${SB_USER}&select=id`, {
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
-    if (funds.length === 0) return;
-    const rows = funds.map(f => ({
-      id: f.id,
-      user_id: SB_USER,
-      nombre: f.nombre,
-      ticker: f.ticker || '',
-      gestora: f.gestora || '',
-      coste: f.coste || 0,
-      valor: f.valor || 0
-    }));
-    await fetch(`${SB_URL}/rest/v1/pulso_funds`, {
-      method: 'POST',
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify(rows)
-    });
-    console.log('✓ Fondos sincronizados con Supabase:', rows.length);
-  } catch(e) { console.warn('sbFundsSync error:', e); }
+    if (!r.ok) { avisarErrorSync('fondos'); return; }
+    const idsNube = await r.json();
+    const locales = new Set(funds.map(f => String(f.id)));
+    const sobrantes = idsNube.map(x => String(x.id)).filter(id => !locales.has(id));
+    if (sobrantes.length > 0) {
+      await sbDelete('pulso_funds', `user_id=eq.${SB_USER}&id=in.(${sobrantes.join(',')})`);
+    }
+    console.log('✓ Fondos sincronizados con Supabase:', funds.length);
+  } catch(e) { console.warn('sbFundsSync error:', e); avisarErrorSync('fondos'); }
 }
+
 
 async function sbFundsCargar() {
   try {
@@ -3366,12 +3411,13 @@ async function sbGastosExtraSync() {
       fechaInicio: e.fechaInicio || '',
       pagos: e.pagos || []
     }));
-    await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.gastos_extra`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.gastos_extra`, {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { items }, updated_at: new Date().toISOString() })
     });
-  } catch(e) { console.warn('sbGastosExtraSync error:', e); }
+    if (!r.ok) { avisarErrorSync('gastos extra'); return; }
+  } catch(e) { console.warn('sbGastosExtraSync error:', e); avisarErrorSync('gastos extra'); }
 }
 
 async function sbGastosExtraCargar() {
@@ -3404,12 +3450,13 @@ async function sbGastosExtraCargar() {
 // ===== PRESUPUESTOS — SUPABASE (pulso_config key=presupuestos) =====
 async function sbPresupuestosSync() {
   try {
-    await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.presupuestos`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.presupuestos`, {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: budgets, updated_at: new Date().toISOString() })
     });
-  } catch(e) { console.warn('sbPresupuestosSync error:', e); }
+    if (!r.ok) { avisarErrorSync('presupuestos'); return; }
+  } catch(e) { console.warn('sbPresupuestosSync error:', e); avisarErrorSync('presupuestos'); }
 }
 
 async function sbPresupuestosCargar() {
@@ -3428,12 +3475,13 @@ async function sbPresupuestosCargar() {
 async function sbHijosSync() {
   try {
     const n = (hijosConfig || []).map(h => ({ nombre: h.nombre, categorias: h.categorias }));
-    await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.analisis_n`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.analisis_n`, {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data: { n }, updated_at: new Date().toISOString() })
     });
-  } catch(e) { console.warn('sbHijosSync error:', e); }
+    if (!r.ok) { avisarErrorSync('hijos'); return; }
+  } catch(e) { console.warn('sbHijosSync error:', e); avisarErrorSync('hijos'); }
 }
 
 async function sbHijosCargar() {
@@ -3530,6 +3578,15 @@ async function cargarTodoTrasLogin() {
   if (bonusDesdeNube && bonusDesdeNube.length > 0) {
     bonusAnual = bonusDesdeNube;
     localStorage.setItem('wl_bonus', JSON.stringify(bonusAnual));
+  }
+
+  // Cargar efectivo desde pulso_config key=efectivo
+  const efectivoDesdeNube = await sbEfectivoCargar();
+  if (efectivoDesdeNube) {
+    retiradaEfectivo = efectivoDesdeNube.retiradas || [];
+    gastosEfectivoLocal = efectivoDesdeNube.gastos || [];
+    localStorage.setItem('wl_retiradas_efectivo', JSON.stringify(retiradaEfectivo));
+    localStorage.setItem('wl_gastos_efectivo_local', JSON.stringify(gastosEfectivoLocal));
   }
 
 
@@ -5767,7 +5824,7 @@ function openModalSeguro(id) {
 // ===== SEGUROS — SUPABASE DIRECTO =====
 async function sbSeguroUpsert(s) {
   try {
-    await fetch(`${SB_URL}/rest/v1/pulso_seguros`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_seguros`, {
       method: 'POST',
       headers: {
         'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
@@ -5783,16 +5840,18 @@ async function sbSeguroUpsert(s) {
         notas: s.notas || ''
       })
     });
-  } catch(e) { console.warn('sbSeguroUpsert error:', e); }
+    if (!r.ok) { avisarErrorSync('seguros'); return; }
+  } catch(e) { console.warn('sbSeguroUpsert error:', e); avisarErrorSync('seguros'); }
 }
 
 async function sbSeguroDelete(id) {
   try {
-    await fetch(`${SB_URL}/rest/v1/pulso_seguros?id=eq.${id}&user_id=eq.${SB_USER}`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_seguros?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
-  } catch(e) { console.warn('sbSeguroDelete error:', e); }
+    if (!r.ok) { avisarErrorSync('seguros'); return; }
+  } catch(e) { console.warn('sbSeguroDelete error:', e); avisarErrorSync('seguros'); }
 }
 
 async function sbSegurosCargar() {
@@ -6124,7 +6183,7 @@ async function sbViajesSync() {
         notas: e.notas || ''
       }))
     }));
-    await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.viajes`, {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.viajes`, {
       method: 'PATCH',
       headers: {
         'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
@@ -6133,8 +6192,9 @@ async function sbViajesSync() {
       },
       body: JSON.stringify({ data: { items }, updated_at: new Date().toISOString() })
     });
+    if (!r.ok) { avisarErrorSync('viajes'); return; }
     console.log('✓ Viajes sincronizados:', items.length);
-  } catch(e) { console.warn('sbViajesSync error:', e); }
+  } catch(e) { console.warn('sbViajesSync error:', e); avisarErrorSync('viajes'); }
 }
 
 async function sbViajesCargar() {
@@ -7074,6 +7134,41 @@ function populateCierreMesFilter() {
 let retiradaEfectivo = JSON.parse(localStorage.getItem('wl_retiradas_efectivo') || '[]');
 let gastosEfectivoLocal = JSON.parse(localStorage.getItem('wl_gastos_efectivo_local') || '[]');
 
+// ===== EFECTIVO — SUPABASE (pulso_config key=efectivo) =====
+// Antes vivía SOLO en cada dispositivo; ahora se sincroniza al editarlo.
+async function sbEfectivoSync() {
+  try {
+    const payload = { retiradas: retiradaEfectivo, gastos: gastosEfectivoLocal };
+    const H = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json' };
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.efectivo`, {
+      method: 'PATCH',
+      headers: { ...H, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ data: payload, updated_at: new Date().toISOString() })
+    });
+    if (!r.ok) { avisarErrorSync('efectivo'); return; }
+    const rows = await r.json();
+    if (!rows || rows.length === 0) {
+      // la fila aún no existe: crearla
+      const r2 = await fetch(`${SB_URL}/rest/v1/pulso_config`, {
+        method: 'POST', headers: H,
+        body: JSON.stringify({ user_id: SB_USER, key: 'efectivo', data: payload })
+      });
+      if (!r2.ok) avisarErrorSync('efectivo');
+    }
+  } catch(e) { console.warn('sbEfectivoSync error:', e); avisarErrorSync('efectivo'); }
+}
+
+async function sbEfectivoCargar() {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.efectivo&select=data`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return rows && rows.length ? rows[0].data : null;
+  } catch(e) { return null; }
+}
+
 function abrirModalGastoEfectivo(mes) {
   const sel = document.getElementById('efg-mes');
   sel.innerHTML = '';
@@ -7132,6 +7227,7 @@ function guardarGastoEfectivo() {
     gastosEfectivoLocal.push({ id: Date.now(), mes, importe, desc, cat });
   }
   localStorage.setItem('wl_gastos_efectivo_local', JSON.stringify(gastosEfectivoLocal));
+  sbEfectivoSync();
   closeModal('modalGastoEfectivo');
   renderEfectivo();
 }
@@ -7139,6 +7235,7 @@ function guardarGastoEfectivo() {
 function eliminarGastoEfectivo(id) {
   gastosEfectivoLocal = gastosEfectivoLocal.filter(g => g.id !== id);
   localStorage.setItem('wl_gastos_efectivo_local', JSON.stringify(gastosEfectivoLocal));
+  sbEfectivoSync();
   renderEfectivo();
 }
 
@@ -7197,6 +7294,7 @@ function guardarRetiradaEfectivo() {
     retiradaEfectivo.push({ id: Date.now(), mes, importe, desc });
   }
   localStorage.setItem('wl_retiradas_efectivo', JSON.stringify(retiradaEfectivo));
+  sbEfectivoSync();
   closeModal('modalEfectivo');
   renderEfectivo();
 }
@@ -7204,6 +7302,7 @@ function guardarRetiradaEfectivo() {
 function eliminarRetirada(id) {
   retiradaEfectivo = retiradaEfectivo.filter(r => r.id !== id);
   localStorage.setItem('wl_retiradas_efectivo', JSON.stringify(retiradaEfectivo));
+  sbEfectivoSync();
   renderEfectivo();
 }
 
@@ -7539,7 +7638,7 @@ function saveAgenda() {
 // ===== AGENDA — SUPABASE DIRECTO =====
 async function sbAgendaUpsert(evento) {
   try {
-    await fetch(`${SB_URL}/rest/v1/agenda_eventos`, {
+    const r = await fetch(`${SB_URL}/rest/v1/agenda_eventos`, {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
@@ -7561,16 +7660,18 @@ async function sbAgendaUpsert(evento) {
         importe: evento.importe || 0
       })
     });
-  } catch(e) { console.warn('sbAgendaUpsert error:', e); }
+    if (!r.ok) { avisarErrorSync('agenda'); return; }
+  } catch(e) { console.warn('sbAgendaUpsert error:', e); avisarErrorSync('agenda'); }
 }
 
 async function sbAgendaDelete(id) {
   try {
-    await fetch(`${SB_URL}/rest/v1/agenda_eventos?id=eq.${id}&user_id=eq.${SB_USER}`, {
+    const r = await fetch(`${SB_URL}/rest/v1/agenda_eventos?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
-  } catch(e) { console.warn('sbAgendaDelete error:', e); }
+    if (!r.ok) { avisarErrorSync('agenda'); return; }
+  } catch(e) { console.warn('sbAgendaDelete error:', e); avisarErrorSync('agenda'); }
 }
 
 async function sbAgendaCargar() {
@@ -7904,7 +8005,7 @@ async function sbBonusCargar() {
 
 async function sbBonusUpsert(item) {
   try {
-    await fetch(`${SB_URL}/rest/v1/bonus_gastos`, {
+    const r = await fetch(`${SB_URL}/rest/v1/bonus_gastos`, {
       method: 'POST',
       headers: {
         'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`,
@@ -7927,16 +8028,18 @@ async function sbBonusUpsert(item) {
         bruto: item.bruto || 0
       })
     });
-  } catch(e) { console.warn('sbBonusUpsert error:', e); }
+    if (!r.ok) { avisarErrorSync('bonus'); return; }
+  } catch(e) { console.warn('sbBonusUpsert error:', e); avisarErrorSync('bonus'); }
 }
 
 async function sbBonusDelete(id) {
   try {
-    await fetch(`${SB_URL}/rest/v1/bonus_gastos?id=eq.${id}&user_id=eq.${SB_USER}`, {
+    const r = await fetch(`${SB_URL}/rest/v1/bonus_gastos?id=eq.${id}&user_id=eq.${SB_USER}`, {
       method: 'DELETE',
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
     });
-  } catch(e) { console.warn('sbBonusDelete error:', e); }
+    if (!r.ok) { avisarErrorSync('bonus'); return; }
+  } catch(e) { console.warn('sbBonusDelete error:', e); avisarErrorSync('bonus'); }
 }
 
 async function sbBonusDeleteAnio(anio) {
@@ -9125,7 +9228,7 @@ if (window.visualViewport) {
 
   async function sbTareaUpsert(tarea) {
     try {
-      await fetch(`${SB_URL}/rest/v1/tareas`, {
+      const r = await fetch(`${SB_URL}/rest/v1/tareas`, {
         method: 'POST',
         headers: {
           'apikey': SB_KEY,
@@ -9141,16 +9244,18 @@ if (window.visualViewport) {
           hecha: tarea.hecha || false
         })
       });
-    } catch(e) { console.warn('sbTareaUpsert error:', e); }
+      if (!r.ok) { avisarErrorSync('tareas'); return; }
+    } catch(e) { console.warn('sbTareaUpsert error:', e); avisarErrorSync('tareas'); }
   }
 
   async function sbTareaDelete(id) {
     try {
-      await fetch(`${SB_URL}/rest/v1/tareas?id=eq.${id}&user_id=eq.${SB_USER}`, {
+      const r = await fetch(`${SB_URL}/rest/v1/tareas?id=eq.${id}&user_id=eq.${SB_USER}`, {
         method: 'DELETE',
         headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
       });
-    } catch(e) { console.warn('sbTareaDelete error:', e); }
+      if (!r.ok) { avisarErrorSync('tareas'); return; }
+    } catch(e) { console.warn('sbTareaDelete error:', e); avisarErrorSync('tareas'); }
   }
 
   function labelFecha(fecha){
