@@ -3096,6 +3096,10 @@ async function sbDelete(tabla, filtro) {
   } catch(e) { console.warn('Supabase delete error:', e); avisarErrorSync(tabla); return false; }
 }
 
+// Solo se borran transacciones de la nube en bloque tras una importación con "reemplazar".
+// Así, una pestaña abierta con datos antiguos ya no puede pisar lo importado en otro dispositivo.
+let _mirrorDeletePendiente = false;
+
 async function guardarEnNube() {
   mostrarEstadoSync('⏳ Guardando...');
   try {
@@ -3118,17 +3122,22 @@ async function guardarEnNube() {
       }
     }
 
-    // 2) Solo con todo ya guardado: eliminar de la nube las que borraste localmente
-    const rIds = await fetch(`${SB_URL}/rest/v1/transactions?user_id=eq.${SB_USER}&select=id`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
-    });
-    if (!rIds.ok) throw new Error('no se pudo verificar el estado de la nube');
-    const idsNube = await rIds.json();
-    const idsLocales = new Set(transactions.map(t => String(t.id)));
-    const sobrantes = idsNube.map(x => String(x.id)).filter(id => !idsLocales.has(id));
-    for (let i = 0; i < sobrantes.length; i += 100) {
-      const ok = await sbDelete('transactions', `user_id=eq.${SB_USER}&id=in.(${sobrantes.slice(i, i + 100).join(',')})`);
-      if (!ok) throw new Error('no se pudieron eliminar transacciones antiguas de la nube');
+    // 2) Borrado en bloque SOLO tras importar con "reemplazar" (los borrados sueltos
+    //    se sincronizan uno a uno en el momento). Evita que una pestaña con datos
+    //    antiguos elimine de la nube movimientos añadidos desde otro dispositivo.
+    if (_mirrorDeletePendiente) {
+      const rIds = await fetch(`${SB_URL}/rest/v1/transactions?user_id=eq.${SB_USER}&select=id`, {
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
+      });
+      if (!rIds.ok) throw new Error('no se pudo verificar el estado de la nube');
+      const idsNube = await rIds.json();
+      const idsLocales = new Set(transactions.map(t => String(t.id)));
+      const sobrantes = idsNube.map(x => String(x.id)).filter(id => !idsLocales.has(id));
+      for (let i = 0; i < sobrantes.length; i += 100) {
+        const ok = await sbDelete('transactions', `user_id=eq.${SB_USER}&id=in.(${sobrantes.slice(i, i + 100).join(',')})`);
+        if (!ok) throw new Error('no se pudieron eliminar transacciones antiguas de la nube');
+      }
+      _mirrorDeletePendiente = false;
     }
 
     // Guardar config (todo lo demás) en una sola fila JSON
@@ -4248,6 +4257,7 @@ function addTransaction() {
 
 function deleteTx(id) {
   transactions = transactions.filter(t => t.id !== id);
+  sbDelete('transactions', `user_id=eq.${SB_USER}&id=eq.${id}`); // borrado individual inmediato en la nube
   saveAll();
   renderAll();
 }
@@ -4377,10 +4387,16 @@ function importCSV(input) {
         modo = resp ? 'reemplazar' : 'añadir';
       }
 
+      let duplicadosOmitidos = 0;
       if (modo === 'reemplazar') {
         transactions = newTx;
+        _mirrorDeletePendiente = true; // el próximo guardado eliminará de la nube lo que no esté en el CSV
       } else {
-        transactions = [...transactions, ...newTx];
+        // Añadir sin duplicar: se saltan los movimientos que ya existen (misma fecha+descripción+tipo+importe)
+        const existentes = new Set(transactions.map(t => `${t.fecha}|${t.desc}|${t.tipo}|${t.importe}`));
+        const nuevosSinDuplicar = newTx.filter(t => !existentes.has(`${t.fecha}|${t.desc}|${t.tipo}|${t.importe}`));
+        duplicadosOmitidos = newTx.length - nuevosSinDuplicar.length;
+        transactions = [...transactions, ...nuevosSinDuplicar];
       }
 
       saveAll();
@@ -4400,7 +4416,7 @@ function importCSV(input) {
         if (idxCuenta >= 0) { activos[idxCuenta].valor = saldoR; saveAll(); }
       }
 
-      alert(`✓ ${newTx.length} transacciones ${modo === 'reemplazar' ? 'cargadas (reemplazando las anteriores)' : 'añadidas'}.${skipped > 0 ? `\n(${skipped} filas omitidas)` : ''}\n\nLos fondos de Investing NO se han tocado.`);
+      alert(`✓ ${modo === 'reemplazar' ? newTx.length + ' transacciones cargadas (reemplazando las anteriores)' : (newTx.length - duplicadosOmitidos) + ' transacciones añadidas'}.${duplicadosOmitidos > 0 ? `\n(${duplicadosOmitidos} ya existían y se han omitido para no duplicar)` : ''}${skipped > 0 ? `\n(${skipped} filas omitidas)` : ''}\n\nLos fondos de Investing NO se han tocado.`);
     } catch(err) {
       alert('Error al procesar el CSV: ' + err.message);
     }
