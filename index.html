@@ -6873,7 +6873,17 @@ function renderGastosExtra() {
 
   const delYear = gastosExtra.filter(e => parseInt(e.fecha?.substring(0,4)) === yearFiltro).map(e => {
     const autoReal = calcularImporteRealDesdeTransacciones(e);
-    return autoReal !== null ? {...e, importeReal: autoReal} : e;
+    let out = autoReal !== null ? {...e, importeReal: autoReal} : {...e};
+    // Plan de reposición enlazado a un viaje: el objetivo no es el presupuesto que
+    // imaginaste, sino lo que el viaje ha costado DE VERDAD (se actualiza solo).
+    if ((out.cuotaMensual > 0) && out.mesLibre) {
+      const vj = viajes.find(v => v.fechaInicio && v.fechaInicio.substring(0,7) === out.mesLibre);
+      if (vj) {
+        const costeReal = gastoRealViaje(vj);
+        if (costeReal > 0) { out.importe = costeReal; out._objetivoDinamico = true; }
+      }
+    }
+    return out;
   });
   const previsto = delYear.reduce((a,e) => a + e.importe, 0);
   // Por cada gasto: qué se ha pagado de verdad (respetando el estado marcado a mano)
@@ -6980,7 +6990,17 @@ function renderGastosExtra() {
     return enAnio && enEstado;
   }).sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e => {
     const autoReal = calcularImporteRealDesdeTransacciones(e);
-    return autoReal !== null ? {...e, importeReal: autoReal} : e;
+    let out = autoReal !== null ? {...e, importeReal: autoReal} : {...e};
+    // mismo objetivo dinámico que en los KPI: los planes ligados a un viaje
+    // apuntan al coste real del viaje, no al presupuesto inicial
+    if ((out.cuotaMensual > 0) && out.mesLibre) {
+      const vj = viajes.find(v => v.fechaInicio && v.fechaInicio.substring(0,7) === out.mesLibre);
+      if (vj) {
+        const costeReal = gastoRealViaje(vj);
+        if (costeReal > 0) { out.importe = costeReal; out._objetivoDinamico = true; }
+      }
+    }
+    return out;
   });
 
   // Para extras de ahorro ligados a un viaje (mesLibre = fechaInicio del viaje),
@@ -7071,7 +7091,7 @@ function renderGastosExtra() {
         '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + e.categoria + '</div>' +
         '<div style="font-size:12px">' + new Date(e.fecha+'T00:00:00').toLocaleDateString('es-ES') + '</div>' +
-        '<div><div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + '</div>' +
+        '<div><div style="font-family:var(--font-mono);font-size:13px">' + fmt(e.importe) + (e._objetivoDinamico ? ' <span title="Objetivo = coste real del viaje enlazado">🔗</span>' : '') + '</div>' +
         (e.importeReal && e.importeReal !== e.importe ? '<div style="font-size:10px;color:' + (e.importeReal>e.importe?'var(--red)':'var(--green)') + '">Real: ' + fmt(e.importeReal) + '</div>' : '') +
         '</div>' +
         '<div><span style="padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;background:' + st.bg + ';color:' + st.color + '">' + st.txt + '</span></div>' +
