@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-1</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-2</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2903,6 +2903,26 @@ async function doLogin() {
   }
 }
 
+// ===== DETECTOR DE VERSIÓN NUEVA =====
+// Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
+const PULSO_VERSION = '26.08.26-2';
+async function comprobarVersion() {
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.version && d.version !== PULSO_VERSION && !document.getElementById('update-bar')) {
+      const bar = document.createElement('div');
+      bar.id = 'update-bar';
+      bar.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--blue,#3d5a8a);color:#fff;padding:10px 18px;border-radius:10px;z-index:9999;font-size:13px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+      bar.onclick = () => location.replace(location.pathname + '?v=' + encodeURIComponent(d.version));
+      bar.textContent = '🔄 Hay una versión nueva de Pulso — toca aquí para actualizar';
+      document.body.appendChild(bar);
+    }
+  } catch(e) {}
+}
+setInterval(comprobarVersion, 30 * 60 * 1000);
+
 function lockDashboard() {
   clearTimeout(_refreshTimer);
   SB_TOKEN = null;
@@ -3525,6 +3545,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('tx-fecha').value = today;
   // Contraseña SIEMPRE al abrir: no se recuerdan sesiones entre aperturas.
   localStorage.removeItem('wl_rt'); // borra el "recuérdame" de versiones anteriores en este dispositivo
+  const vb = document.getElementById('version-badge');
+  if (vb) vb.textContent = 'versión ' + PULSO_VERSION;
+  comprobarVersion();
   showLogin();
 });
 
@@ -3618,7 +3641,11 @@ async function cargarTodoTrasLogin() {
   initLeasing();
   _unsavedChanges = false;
   _appLista = true;
-  if (typeof tareasRender === 'function') setTimeout(tareasRender, 300);
+  // Tras el login: cargar tareas de la nube y fusionar con lo local
+  setTimeout(function(){
+    if (typeof tareasSyncDesdeNube === 'function') tareasSyncDesdeNube();
+    else if (typeof tareasRender === 'function') tareasRender();
+  }, 300);
 }
 
 function resetAllData() {
@@ -5976,11 +6003,8 @@ function renderSeguros() {
       // Vencido
       alertas.push({ s, dias, tipo: 'vencido' });
     } else if (dias <= 75) {
-      // No quiere renovar y quedan menos de 60 días → hay que avisar a la aseguradora YA
-      alertas.push({ s, dias, tipo: 'cancelar' });
-    } else if (dias <= 30) {
-      // Cualquier seguro que vence en 30 días
-      alertas.push({ s, dias, tipo: 'urgente' });
+      // TODOS los seguros avisan con 2,5 meses de antelación: margen para poder anular
+      alertas.push({ s, dias, tipo: noRenovar ? 'cancelar' : 'urgente' });
     }
   });
 
@@ -6000,8 +6024,8 @@ function renderSeguros() {
       } else {
         bg = 'rgba(155,53,53,0.06)'; border = 'rgba(155,53,53,0.2)';
         icono = '🔴';
-        titulo = `<strong>${s.nombre}</strong> — Vence pronto`;
-        subtitulo = `${s.aseguradora || ''} · Vence en ${dias} días · ${s.renovacion === 'si' ? 'Marcado para renovar' : 'Confirma si quieres renovar'}`;
+        titulo = `<strong>${s.nombre}</strong> — Vence en ${dias} días`;
+        subtitulo = `${s.aseguradora || ''} · ${s.renovacion === 'si' ? 'Marcado para renovar — aún estás a tiempo de anularlo si cambias de idea' : 'Decide si renuevas: para anular, avisa ya a la aseguradora'}`;
       }
       return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div style="display:flex;align-items:center;gap:12px">
@@ -8000,12 +8024,30 @@ function renderAgendaAlertas() {
     </div>`;
   }).join('');
 
+  // Avisos de seguros también aquí (75 días de margen para poder anular)
+  let htmlSeguros = '';
+  try {
+    const hoySeg = new Date(); hoySeg.setHours(0,0,0,0);
+    (seguros || []).filter(s => s.vencimiento).forEach(s => {
+      const diasSeg = Math.ceil((new Date(s.vencimiento + 'T00:00:00') - hoySeg) / 86400000);
+      if (diasSeg > 75) return;
+      const vencido = diasSeg < 0;
+      htmlSeguros += `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:${vencido ? 'rgba(155,53,53,0.10)' : 'rgba(184,144,31,0.10)'};border:1px solid ${vencido ? 'rgba(155,53,53,0.35)' : 'rgba(184,144,31,0.35)'};border-radius:10px;padding:10px 16px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🛡</span><div>
+          <div style="font-size:13px;color:var(--text)"><strong>${s.nombre}</strong> ${vencido ? `venció hace ${-diasSeg} días` : `vence en ${diasSeg} días`}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.aseguradora || ''} · Prima ${fmt(s.prima || 0)} · ${s.renovacion === 'no' ? 'Quieres anularlo: avisa YA a la aseguradora' : 'Estás a tiempo de anularlo si no quieres renovar'}</div>
+        </div></div>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;white-space:nowrap" onclick="switchTabMobile('seguros')">Ver</button>
+      </div>`;
+    });
+  } catch(e) { console.warn('avisos seguros portada:', e); }
+
   // Rellenar en pestaña agenda
   const elAgenda = document.getElementById('agenda-alertas');
-  if (elAgenda) elAgenda.innerHTML = htmlAhorro + html;
+  if (elAgenda) elAgenda.innerHTML = htmlSeguros + htmlAhorro + html;
   // Rellenar en portada resumen
   const elResumen = document.getElementById('agenda-alertas-resumen');
-  if (elResumen) elResumen.innerHTML = htmlAhorro + html;
+  if (elResumen) elResumen.innerHTML = htmlSeguros + htmlAhorro + html;
 }
 
 function renderAgenda() {
@@ -8928,15 +8970,138 @@ function renderAgendaAlertas() {
     </div>`;
   }).join('');
 
+  // Avisos de seguros también aquí (75 días de margen para poder anular)
+  let htmlSeguros = '';
+  try {
+    const hoySeg = new Date(); hoySeg.setHours(0,0,0,0);
+    (seguros || []).filter(s => s.vencimiento).forEach(s => {
+      const diasSeg = Math.ceil((new Date(s.vencimiento + 'T00:00:00') - hoySeg) / 86400000);
+      if (diasSeg > 75) return;
+      const vencido = diasSeg < 0;
+      htmlSeguros += `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:${vencido ? 'rgba(155,53,53,0.10)' : 'rgba(184,144,31,0.10)'};border:1px solid ${vencido ? 'rgba(155,53,53,0.35)' : 'rgba(184,144,31,0.35)'};border-radius:10px;padding:10px 16px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🛡</span><div>
+          <div style="font-size:13px;color:var(--text)"><strong>${s.nombre}</strong> ${vencido ? `venció hace ${-diasSeg} días` : `vence en ${diasSeg} días`}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.aseguradora || ''} · Prima ${fmt(s.prima || 0)} · ${s.renovacion === 'no' ? 'Quieres anularlo: avisa YA a la aseguradora' : 'Estás a tiempo de anularlo si no quieres renovar'}</div>
+        </div></div>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;white-space:nowrap" onclick="switchTabMobile('seguros')">Ver</button>
+      </div>`;
+    });
+  } catch(e) { console.warn('avisos seguros portada:', e); }
+
   // Rellenar en pestaña agenda
   const elAgenda = document.getElementById('agenda-alertas');
-  if (elAgenda) elAgenda.innerHTML = htmlAhorro + html;
+  if (elAgenda) elAgenda.innerHTML = htmlSeguros + htmlAhorro + html;
   // Rellenar en portada resumen
   const elResumen = document.getElementById('agenda-alertas-resumen');
-  if (elResumen) elResumen.innerHTML = htmlAhorro + html;
+  if (elResumen) elResumen.innerHTML = htmlSeguros + htmlAhorro + html;
 }
 
 // (segunda copia de renderAgenda eliminada)
+
+// ===== INFORME ANUAL =====
+function mostrarInformeAnual(anio) {
+  anio = anio || new Date().getFullYear();
+  const txA = transactions.filter(t => (t.fecha || '').startsWith(String(anio)));
+  const mesesL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // por mes
+  const porMes = Array.from({length:12}, (_, i) => {
+    const pref = `${anio}-${String(i+1).padStart(2,'0')}`;
+    const m = txA.filter(t => t.fecha.startsWith(pref));
+    const ing = m.filter(t => t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
+    const gas = m.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
+    return { i, ing, gas, bal: ing - gas, n: m.length };
+  }).filter(m => m.n > 0);
+
+  const totIng = porMes.reduce((a,m)=>a+m.ing,0);
+  const totGas = porMes.reduce((a,m)=>a+m.gas,0);
+  const tasaAhorro = totIng > 0 ? Math.round((totIng - totGas) / totIng * 100) : 0;
+
+  // destacados
+  const mesCaro = [...porMes].sort((a,b)=>b.gas-a.gas)[0];
+  const mesAhorro = [...porMes].sort((a,b)=>b.bal-a.bal)[0];
+  const gastoTop = [...txA.filter(t=>t.tipo==='Gasto')].sort((a,b)=>b.importe-a.importe)[0];
+
+  // top categorías de gasto
+  const cats = {};
+  txA.filter(t=>t.tipo==='Gasto').forEach(t => { cats[t.cat || 'Sin categoría'] = (cats[t.cat || 'Sin categoría'] || 0) + t.importe; });
+  const topCats = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // viajes, seguros, fondos
+  const viajesA = viajes.filter(v => v.estado !== 'cancelado' && ((v.fechaInicio||'').startsWith(String(anio)) || (v.fechaFin||'').startsWith(String(anio))));
+  const gastoViajes = viajesA.reduce((a,v)=>a+gastoRealViaje(v),0);
+  const primaSeguros = (seguros || []).reduce((a,s)=>a+(s.prima||0),0);
+  const fondosCoste = funds.reduce((a,f)=>a+(f.coste||0),0);
+  const fondosValor = funds.reduce((a,f)=>a+(f.valor||0),0);
+
+  const filaEstilo = 'padding:7px 10px;border-bottom:1px solid var(--border)';
+  const th = 'padding:7px 10px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)';
+  const seccion = t => `<div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin:22px 0 10px;font-weight:600">${t}</div>`;
+
+  const aniosDisponibles = [...new Set(transactions.map(t => (t.fecha||'').substring(0,4)).filter(Boolean))].sort().reverse();
+
+  let overlay = document.getElementById('informe-anual-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'informe-anual-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px';
+  overlay.innerHTML = `
+    <div style="background:var(--bg);border-radius:14px;max-width:680px;width:100%;padding:26px 28px;position:relative">
+      <button onclick="document.getElementById('informe-anual-overlay').remove()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600">Informe del año</div>
+        <select onchange="mostrarInformeAnual(parseInt(this.value))" style="font-size:14px;padding:2px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface2)">
+          ${aniosDisponibles.map(a => `<option value="${a}" ${parseInt(a)===anio?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </div>
+
+      ${seccion('El año en tres cifras')}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:var(--surface2);border-radius:10px;padding:14px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Ingresos</div><div style="font-family:var(--font-display);font-size:22px;color:var(--green)">${fmt(totIng)}</div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:14px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Gastos</div><div style="font-family:var(--font-display);font-size:22px;color:var(--red)">${fmt(totGas)}</div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:14px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Balance</div><div style="font-family:var(--font-display);font-size:22px;color:${totIng-totGas>=0?'var(--green)':'var(--red)'}">${fmt(totIng-totGas)}</div><div style="font-size:10px;color:var(--muted)">${tasaAhorro}% de ahorro</div></div>
+      </div>
+
+      ${seccion('Mes a mes')}
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr><th style="${th};text-align:left">Mes</th><th style="${th}">Ingresos</th><th style="${th}">Gastos</th><th style="${th}">Balance</th></tr></thead>
+        <tbody>${porMes.map(m => `<tr>
+          <td style="${filaEstilo}">${mesesL[m.i]}</td>
+          <td style="${filaEstilo};text-align:right;font-family:var(--font-mono)">${fmt(m.ing)}</td>
+          <td style="${filaEstilo};text-align:right;font-family:var(--font-mono)">${fmt(m.gas)}</td>
+          <td style="${filaEstilo};text-align:right;font-family:var(--font-mono);color:${m.bal>=0?'var(--green)':'var(--red)'}">${fmt(m.bal)}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="font-weight:700"><td style="padding:9px 10px">Total</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono)">${fmt(totIng)}</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono)">${fmt(totGas)}</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono);color:${totIng-totGas>=0?'var(--green)':'var(--red)'}">${fmt(totIng-totGas)}</td></tr></tfoot>
+      </table>
+
+      ${seccion('Lo más destacado')}
+      <ul style="font-size:13px;line-height:2;margin:0;padding-left:18px">
+        ${mesCaro ? `<li>El mes de más gasto fue <strong>${mesesL[mesCaro.i]}</strong> (${fmt(mesCaro.gas)})</li>` : ''}
+        ${mesAhorro ? `<li>El mes que más ahorraste fue <strong>${mesesL[mesAhorro.i]}</strong> (${fmt(mesAhorro.bal)})</li>` : ''}
+        ${gastoTop ? `<li>El mayor gasto individual: <strong>${gastoTop.desc}</strong> (${fmt(gastoTop.importe)}, ${new Date(gastoTop.fecha+'T00:00:00').toLocaleDateString('es-ES')})</li>` : ''}
+        ${topCats[0] ? `<li>La categoría estrella: <strong>${topCats[0][0]}</strong> (${fmt(topCats[0][1])} en el año)</li>` : ''}
+        <li>${txA.length} movimientos registrados${viajesA.length ? ` · ${viajesA.length} viaje${viajesA.length===1?'':'s'} (${fmt(gastoViajes)})` : ''}</li>
+      </ul>
+
+      ${seccion('Top categorías de gasto')}
+      ${topCats.map(([c, v]) => {
+        const pct = totGas > 0 ? Math.round(v/totGas*100) : 0;
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px">
+          <div style="flex:0 0 160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c}</div>
+          <div style="flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
+          <div style="flex:0 0 90px;text-align:right;font-family:var(--font-mono)">${fmt(v)} · ${pct}%</div>
+        </div>`;
+      }).join('')}
+
+      ${seccion('Patrimonio y protección')}
+      <ul style="font-size:13px;line-height:2;margin:0;padding-left:18px">
+        <li>Cartera de fondos: <strong>${fmt(fondosValor)}</strong> (invertido ${fmt(fondosCoste)}, ${fondosValor>=fondosCoste?'+':''}${fmt(fondosValor-fondosCoste)})</li>
+        <li>Seguros contratados: ${(seguros||[]).length}, prima anual total ${fmt(primaSeguros)}</li>
+      </ul>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
 
 </script>
 
@@ -8951,6 +9116,7 @@ function renderAgendaAlertas() {
   <button class="mobile-more-item" onclick="switchTabMobile('viajes')"><span class="mobile-more-item-icon">✈</span> Viajes</button>
   <button class="mobile-more-item" onclick="switchTabMobile('gastos_extra')"><span class="mobile-more-item-icon">📅</span> Extras</button>
   <button class="mobile-more-item" onclick="switchTabMobile('cierre')"><span class="mobile-more-item-icon">📊</span> Cierre mes</button>
+  <button class="mobile-more-item" onclick="closeMobileMore(); mostrarInformeAnual()"><span class="mobile-more-item-icon">📚</span> Informe del año</button>
   <button class="mobile-more-item" onclick="switchTabMobile('agenda')"><span class="mobile-more-item-icon">🗓</span> Agenda</button>
   <button class="mobile-more-item" onclick="switchTabMobile('bonus')"><span class="mobile-more-item-icon">🎁</span> Bonus</button>
   <button class="mobile-more-item" onclick="switchTabMobile('jubilacion')"><span class="mobile-more-item-icon">🏛</span> Jubilación</button>
@@ -9581,19 +9747,23 @@ if (window.visualViewport) {
   });
 
   // Cargar desde Supabase al iniciar
-  sbTareasCargar().then(function(rows){
-    if(rows !== null){
-      // FUSIONAR nube y local (no reemplazar): las tareas de este dispositivo que
-      // no llegaron a la nube se conservan y se suben ahora mismo.
-      var locales = tareasCargar();
-      var idsNube = {};
-      rows.forEach(function(t){ idsNube[String(t.id)] = true; });
-      var soloLocales = locales.filter(function(t){ return t.id && !idsNube[String(t.id)]; });
-      soloLocales.forEach(function(t){ sbTareaUpsert(t); });
-      tareasGuardar(rows.concat(soloLocales));
-    }
-    tareasRender();
-  });
+  window.tareasSyncDesdeNube = function(){
+    sbTareasCargar().then(function(rows){
+      if(rows !== null){
+        // FUSIONAR nube y local (no reemplazar): las tareas de este dispositivo que
+        // no llegaron a la nube se conservan y se suben ahora mismo.
+        var locales = tareasCargar();
+        var idsNube = {};
+        rows.forEach(function(t){ idsNube[String(t.id)] = true; });
+        var soloLocales = locales.filter(function(t){ return t.id && !idsNube[String(t.id)]; });
+        soloLocales.forEach(function(t){ sbTareaUpsert(t); });
+        tareasGuardar(rows.concat(soloLocales));
+      }
+      tareasRender();
+    });
+  };
+  // Pintar lo local de inmediato; la carga de la nube llega tras el login
+  tareasRender();
 })();
 </script>
 </body></html>
