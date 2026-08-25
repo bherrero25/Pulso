@@ -6192,14 +6192,32 @@ function openModalViaje(id) {
   openModal('modalViaje');
 }
 
-// Gasto real efectivo de un viaje: automático desde transacciones si hay categoría vinculada
+// Gasto real efectivo de un viaje: automático desde transacciones si hay categoría vinculada.
+// Si VARIOS viajes comparten la misma categoría (p.ej. dos "Viaje Ibiza"), cada movimiento
+// se asigna al viaje cuyas fechas le queden más cerca — así no se cuentan dos veces.
 function gastoRealViaje(v) {
-  if (v.catVinculada) {
-    const gastos = transactions.filter(t => t.cat === v.catVinculada && t.tipo === 'Gasto').reduce((a,b) => a + b.importe, 0);
-    const ingresos = transactions.filter(t => t.cat === v.catVinculada && t.tipo === 'Ingreso').reduce((a,b) => a + b.importe, 0);
-    return Math.max(0, Math.round((gastos - ingresos) * 100) / 100);
-  }
-  return v.gastoReal || 0;
+  if (!v.catVinculada) return v.gastoReal || 0;
+  const hermanos = viajes.filter(x => x.catVinculada === v.catVinculada)
+    .sort((a,b) => (a.fechaInicio||'').localeCompare(b.fechaInicio||'') || String(a.id).localeCompare(String(b.id)));
+  const distancia = (fecha, x) => {
+    const ini = x.fechaInicio || x.fechaFin;
+    const fin = x.fechaFin || x.fechaInicio;
+    if (!ini) return Number.MAX_SAFE_INTEGER;
+    if (fecha >= ini && fecha <= fin) return 0;
+    const d = new Date(fecha + 'T00:00:00').getTime();
+    return Math.min(Math.abs(d - new Date(ini + 'T00:00:00').getTime()), Math.abs(d - new Date(fin + 'T00:00:00').getTime()));
+  };
+  let neto = 0;
+  transactions.forEach(t => {
+    if (t.cat !== v.catVinculada || !t.fecha) return;
+    if (hermanos.length > 1) {
+      let mejor = Infinity, duenno = hermanos[0];
+      hermanos.forEach(h => { const d = distancia(t.fecha, h); if (d < mejor) { mejor = d; duenno = h; } });
+      if (String(duenno.id) !== String(v.id)) return; // este movimiento pertenece al otro viaje
+    }
+    neto += (t.tipo === 'Gasto' ? t.importe : -t.importe);
+  });
+  return Math.max(0, Math.round(neto * 100) / 100);
 }
 
 // ===== VIAJES — SUPABASE DIRECTO (pulso_config key=viajes) =====
