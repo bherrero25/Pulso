@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-2</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-3</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -843,6 +843,7 @@
   <button class="tab" onclick="switchTab(&#39;viajes&#39;, this)">✈ Viajes</button>
   <button class="tab" onclick="switchTab(&#39;gastos_extra&#39;, this)">📅 Extras</button>
   <button class="tab" onclick="switchTab(&#39;cierre&#39;, this)">📊 Cierre mes</button>
+  <button class="tab" onclick="mostrarInformeAnual()">📚 Informe año</button>
   <button class="tab" onclick="switchTab(&#39;agenda&#39;, this)">🗓 Agenda</button>
   <button class="tab" onclick="switchTab(&#39;bonus&#39;, this)">🎯 Bonus</button>
   <button class="tab" onclick="switchTab(&#39;jubilacion&#39;, this)">🏛 Jubilación</button>
@@ -2905,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-2';
+const PULSO_VERSION = '26.08.26-3';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
