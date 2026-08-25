@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-4</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-5</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-4';
+const PULSO_VERSION = '26.08.26-5';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -9015,8 +9015,14 @@ function mostrarInformeAnual(anio) {
     const pref = `${anio}-${String(i+1).padStart(2,'0')}`;
     const m = txA.filter(t => t.fecha.startsWith(pref));
     const ing = m.filter(t => t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
-    const gas = m.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
-    return { i, ing, gas, bal: ing - gas, n: m.length };
+    const gastosMes = m.filter(t => t.tipo === 'Gasto');
+    const gas = gastosMes.reduce((a,b)=>a+b.importe,0);
+    // desglose del mes: top categorías y mayores gastos sueltos (para responder "¿por qué este mes?")
+    const catsMes = {};
+    gastosMes.forEach(t => { catsMes[t.cat || 'Sin categoría'] = (catsMes[t.cat || 'Sin categoría'] || 0) + t.importe; });
+    const topCatsMes = Object.entries(catsMes).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const topGastosMes = [...gastosMes].sort((a,b)=>b.importe-a.importe).slice(0,3);
+    return { i, ing, gas, bal: ing - gas, n: m.length, topCatsMes, topGastosMes };
   }).filter(m => m.n > 0);
 
   const totIng = porMes.reduce((a,m)=>a+m.ing,0);
@@ -9071,12 +9077,18 @@ function mostrarInformeAnual(anio) {
       ${seccion('Mes a mes')}
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr><th style="${th};text-align:left">Mes</th><th style="${th}">Ingresos</th><th style="${th}">Gastos</th><th style="${th}">Balance</th></tr></thead>
-        <tbody>${porMes.map(m => `<tr>
-          <td style="${filaEstilo}">${mesesL[m.i]}</td>
+        <tbody>${porMes.map(m => `<tr onclick="const d=document.getElementById('im-det-${m.i}'); d.style.display = d.style.display==='none' ? '' : 'none'; this.querySelector('.im-flecha').textContent = d.style.display==='none' ? '▸' : '▾'" style="cursor:pointer" title="Pulsa para ver de qué se compone">
+          <td style="${filaEstilo}"><span class="im-flecha" style="color:var(--muted);font-size:10px">▸</span> ${mesesL[m.i]}</td>
           <td style="${filaEstilo};text-align:right;font-family:var(--font-mono)">${fmt(m.ing)}</td>
           <td style="${filaEstilo};text-align:right;font-family:var(--font-mono)">${fmt(m.gas)}</td>
           <td style="${filaEstilo};text-align:right;font-family:var(--font-mono);color:${m.bal>=0?'var(--green)':'var(--red)'}">${fmt(m.bal)}</td>
-        </tr>`).join('')}</tbody>
+        </tr>
+        <tr id="im-det-${m.i}" style="display:none"><td colspan="4" style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px">En qué se fue el gasto de ${mesesL[m.i].toLowerCase()}</div>
+          ${m.topCatsMes.map(([c,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${c}</span><span style="font-family:var(--font-mono)">${fmt(v)} · ${m.gas>0?Math.round(v/m.gas*100):0}%</span></div>`).join('')}
+          ${m.topGastosMes.length ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:8px 0 4px">Mayores gastos sueltos</div>
+          ${m.topGastosMes.map(t => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--muted)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${t.desc}</span><span style="font-family:var(--font-mono)">${fmt(t.importe)}</span></div>`).join('')}` : ''}
+        </td></tr>`).join('')}</tbody>
         <tfoot><tr style="font-weight:700"><td style="padding:9px 10px">Total</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono)">${fmt(totIng)}</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono)">${fmt(totGas)}</td><td style="padding:9px 10px;text-align:right;font-family:var(--font-mono);color:${totIng-totGas>=0?'var(--green)':'var(--red)'}">${fmt(totIng-totGas)}</td></tr></tfoot>
       </table>
 
