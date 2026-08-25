@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-3</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-4</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1655,7 +1655,7 @@
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Resumen mensual, comparativa con presupuesto y gastos recurrentes</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select class="month-selector" id="cierreMesFilter" onchange="renderCierre()" style="padding:6px 12px;font-size:12px"><option value="2026-03">Mar 2026</option><option value="2026-02">Feb 2026</option><option value="2026-01">Ene 2026</option></select>
+        <select class="month-selector" id="cierreMesFilter" onchange="this.dataset.eleccionUsuario='1'; renderCierre()" style="padding:6px 12px;font-size:12px"></select>
         <button class="btn btn-gold" onclick="guardarCierreMes()">📥 Guardar cierre</button>
       </div>
     </div>
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-3';
+const PULSO_VERSION = '26.08.26-4';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -7300,11 +7300,16 @@ function editFundValor(id) {
 function populateCierreMesFilter() {
   const sel = document.getElementById('cierreMesFilter');
   if (!sel) return;
-  const valorActual = sel.value; // guardar selección actual
+  // solo se respeta la selección si la eligió la usuaria a mano
+  const valorActual = sel.dataset.eleccionUsuario ? sel.value : '';
   const meses = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
   sel.innerHTML = meses.map(m => `<option value="${m}">${formatMonth(m)}</option>`).join('');
-  // restaurar selección si sigue existiendo, si no dejar el primero
-  if (valorActual && meses.includes(valorActual)) sel.value = valorActual;
+  if (valorActual && meses.includes(valorActual)) { sel.value = valorActual; return; }
+  // por defecto: el último mes TERMINADO que aún no tiene cierre
+  const mesActual = new Date().toISOString().substring(0,7);
+  const cerrados = new Set((historicoCierres || []).map(c => c.mes));
+  const pendiente = meses.find(m => m < mesActual && !cerrados.has(m));
+  sel.value = pendiente || meses.find(m => m < mesActual) || meses[0] || '';
 }
 
 // ===== EFECTIVO =====
