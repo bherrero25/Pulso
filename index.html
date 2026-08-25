@@ -6855,11 +6855,15 @@ function _generarCuotas(e) {
 }
 
 function calcularImporteRealDesdeTransacciones(e) {
-  if (!e.palabrasClave || !e.palabrasClave.trim()) return null;
-  const palabras = e.palabrasClave.split(',').map(p => p.trim().toLowerCase()).filter(p => p);
+  // Con palabras clave: busca esas. Sin ellas: prueba con el propio nombre del gasto
+  // (así "Maica soria" encuentra sola la transacción "Maica Soria" sin configurar nada).
+  const clave = (e.palabrasClave && e.palabrasClave.trim()) ? e.palabrasClave : (e.desc || '');
+  if (!clave.trim()) return null;
+  const palabras = clave.split(',').map(p => p.trim().toLowerCase()).filter(p => p);
   const total = transactions
     .filter(t => t.tipo === 'Gasto' && palabras.every(p => (t.desc || '').toLowerCase().includes(p)))
     .reduce((sum, t) => sum + t.importe, 0);
+  if (!(e.palabrasClave && e.palabrasClave.trim()) && total === 0) return null; // el nombre no encontró nada: seguir con el estado manual
   return Math.round(total * 100) / 100;
 }
 
@@ -6890,7 +6894,8 @@ function renderGastosExtra() {
     }
     ejecutadoReal += pagado;
     ejecutadoCapado += Math.min(pagado, e.importe);
-    const falta = Math.max(0, e.importe - pagado);
+    // si lo has marcado "pagado" a mano, no queda nada pendiente aunque el importe real difiera
+    const falta = ((e.estado || '').toLowerCase() === 'pagado') ? 0 : Math.max(0, e.importe - pagado);
     pendiente += falta;
     if (falta > 0) nPendientes++;
     exceso += Math.max(0, pagado - e.importe);
