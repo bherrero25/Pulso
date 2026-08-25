@@ -2524,6 +2524,13 @@
         <input type="text" class="form-input" id="vj-notas" placeholder="Comentarios del viaje...">
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1 / -1">
+        <label class="form-label">🔗 Categoría vinculada (gasto real automático)</label>
+        <select class="form-input" id="vj-cat-vinculada"></select>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Si eliges una categoría, el gasto real del viaje se calcula solo desde tus transacciones (Airtable + apuntes a mano), siempre exacto. Déjalo en "— sin vincular —" para usar la suma de los elementos de abajo.</div>
+      </div>
+    </div>
 
     <!-- GESTOR DE ELEMENTOS POR CATEGORÍA -->
     <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
@@ -6144,6 +6151,16 @@ function saveElementoViaje() {
   renderVjElementosLista();
 }
 
+function _poblarCatVinculada(valorActual) {
+  const sel = document.getElementById('vj-cat-vinculada');
+  if (!sel) return;
+  const cats = [...new Set([...Object.keys(budgets || {}), ...transactions.map(t => t.cat).filter(Boolean)])].sort((a,b) => a.localeCompare(b,'es'));
+  sel.innerHTML = '<option value="">— sin vincular —</option>';
+  cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; sel.appendChild(o); });
+  sel.value = valorActual || '';
+  if (valorActual && sel.value !== valorActual) { const o = new Option(valorActual, valorActual); sel.add(o); sel.value = valorActual; }
+}
+
 function openModalViaje(id) {
   document.getElementById('vj-edit-id').value = id || '';
   if (id) {
@@ -6158,6 +6175,7 @@ function openModalViaje(id) {
     document.getElementById('vj-personas').value = v.personas || 1;
     document.getElementById('vj-tipo').value = v.tipo;
     document.getElementById('vj-notas').value = v.notas || '';
+    _poblarCatVinculada(v.catVinculada);
     vjElementosTemp = JSON.parse(JSON.stringify(v.elementos || []));
   } else {
     document.getElementById('modalViajeTitle').textContent = 'Nuevo Viaje';
@@ -6167,10 +6185,21 @@ function openModalViaje(id) {
     document.getElementById('vj-tipo').value = 'Vacaciones';
     document.getElementById('vj-fecha-inicio').value = '';
     document.getElementById('vj-fecha-fin').value = '';
+    _poblarCatVinculada('');
     vjElementosTemp = [];
   }
   renderVjElementosLista();
   openModal('modalViaje');
+}
+
+// Gasto real efectivo de un viaje: automático desde transacciones si hay categoría vinculada
+function gastoRealViaje(v) {
+  if (v.catVinculada) {
+    const gastos = transactions.filter(t => t.cat === v.catVinculada && t.tipo === 'Gasto').reduce((a,b) => a + b.importe, 0);
+    const ingresos = transactions.filter(t => t.cat === v.catVinculada && t.tipo === 'Ingreso').reduce((a,b) => a + b.importe, 0);
+    return Math.max(0, Math.round((gastos - ingresos) * 100) / 100);
+  }
+  return v.gastoReal || 0;
 }
 
 // ===== VIAJES — SUPABASE DIRECTO (pulso_config key=viajes) =====
@@ -6188,6 +6217,7 @@ async function sbViajesSync() {
       notas: v.notas || '',
       estado: v.estado || 'planificado',
       tipo: v.tipo || '',
+      catVinculada: v.catVinculada || '',
       gastos: (v.elementos || []).map(e => ({
         id: String(e.id),
         categoria: e.cat || e.categoria || 'otro',
@@ -6233,6 +6263,7 @@ async function sbViajesCargar() {
       notas: v.notas || '',
       estado: v.estado || 'planificado',
       tipo: v.tipo || '',
+      catVinculada: v.catVinculada || '',
       elementos: (v.gastos || []).map(g => ({
         id: g.id,
         cat: g.categoria || 'otro',
@@ -6261,6 +6292,7 @@ function saveViaje() {
     personas: parseInt(document.getElementById('vj-personas').value) || 1,
     tipo: document.getElementById('vj-tipo').value,
     notas: document.getElementById('vj-notas').value.trim(),
+    catVinculada: document.getElementById('vj-cat-vinculada').value || '',
     elementos: vjElementosTemp
   };
   if (!v.destino) { alert('El destino es obligatorio.'); return; }
@@ -6390,7 +6422,7 @@ function renderViajes() {
   const anioActual = new Date().getFullYear();
   
   const gastosAnio = viajes.filter(v => v.fechaInicio && parseInt(v.fechaInicio.substring(0,4)) === anioActual);
-  const gastoTotal = gastosAnio.reduce((a,v) => a + (v.gastoReal || v.presupuesto), 0);
+  const gastoTotal = gastosAnio.reduce((a,v) => a + (gastoRealViaje(v) || v.presupuesto), 0);
   const presupuestoTotal = viajes.reduce((a,v) => a + v.presupuesto, 0);
 
   document.getElementById('vj-gasto-anio').textContent = fmt(gastoTotal);
@@ -6426,18 +6458,18 @@ function renderViajes() {
       resumenBody.innerHTML = '<div style="color:var(--muted);font-size:13px">Todavía no hay viajes este año.</div>';
     } else {
       const totalPres = delAnio.reduce((s,v)=>s+(v.presupuesto||0),0);
-      const totalGasto = delAnio.reduce((s,v)=>s+(v.gastoReal||0),0);
+      const totalGasto = delAnio.reduce((s,v)=>s+gastoRealViaje(v),0);
       const nReal = delAnio.filter(v=>v.estado==='realizado').length;
       document.getElementById('vj-resumen-sub').textContent = `${nReal} realizado${nReal===1?'':'s'} · ${delAnio.length - nReal} por delante`;
       const ddmm = f => f && f.length >= 10 ? `${f.substring(8,10)}/${f.substring(5,7)}` : '—';
       const filas = delAnio.map(v => {
-        const desv = (v.gastoReal||0) - (v.presupuesto||0);
+        const desv = gastoRealViaje(v) - (v.presupuesto||0);
         return `<tr style="border-bottom:1px solid var(--border)">
           <td style="padding:8px 10px;font-weight:600">${v.destino}</td>
           <td style="padding:8px 10px;white-space:nowrap;color:var(--muted)">${ddmm(v.fechaInicio)} → ${ddmm(v.fechaFin)}</td>
           <td style="padding:8px 10px"><span style="color:${estadoColors[v.estado]||'var(--text)'}">${estadoLabels[v.estado]||v.estado}</span></td>
           <td style="padding:8px 10px;text-align:right">${fmt(v.presupuesto||0)}</td>
-          <td style="padding:8px 10px;text-align:right">${fmt(v.gastoReal||0)}</td>
+          <td style="padding:8px 10px;text-align:right">${fmt(gastoRealViaje(v))}${v.catVinculada ? ' 🔗' : ''}</td>
           <td style="padding:8px 10px;text-align:right;color:${desv>0?'var(--red)':'var(--green)'}">${desv>0?'+':''}${fmt(desv)}</td>
         </tr>`;
       }).join('');
@@ -6475,7 +6507,8 @@ function renderViajes() {
   });
 
   listaEl.innerHTML = sorted.map(v => {
-    const pctGasto = v.presupuesto > 0 ? Math.min(100, ((v.gastoReal||0)/v.presupuesto)*100) : 0;
+    const gr = gastoRealViaje(v);
+    const pctGasto = v.presupuesto > 0 ? Math.min(100, (gr/v.presupuesto)*100) : 0;
     const dias = v.fechaInicio && v.fechaFin ? 
       Math.ceil((new Date(v.fechaFin+'T00:00:00') - new Date(v.fechaInicio+'T00:00:00')) / (1000*60*60*24)) + 1 : null;
     return `<div class="card" style="margin-bottom:12px">
@@ -6505,13 +6538,13 @@ function renderViajes() {
             ${dias && v.presupuesto ? `<div style="font-size:10px;color:var(--muted)">${fmt(v.presupuesto/v.personas)}/persona · ${fmt(v.presupuesto/dias)}/día</div>` : ''}
           </div>
           <div>
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Gasto Real</div>
-            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${v.gastoReal > v.presupuesto && v.presupuesto > 0 ? 'var(--red)' : 'var(--text)'}">${v.gastoReal ? fmt(v.gastoReal) : '—'}</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">Gasto Real${v.catVinculada ? ` <span title="Automático desde transacciones: ${v.catVinculada}">🔗</span>` : ''}</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${gr > v.presupuesto && v.presupuesto > 0 ? 'var(--red)' : 'var(--text)'}">${gr ? fmt(gr) : '—'}</div>
           </div>
           <div>
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">${v.gastoReal ? 'Desviación' : 'Restante'}</div>
-            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${v.gastoReal && v.gastoReal > v.presupuesto ? 'var(--red)' : 'var(--green)'}">
-              ${v.gastoReal ? (v.gastoReal > v.presupuesto ? '+' : '') + fmt(v.gastoReal - v.presupuesto) : fmt(v.presupuesto)}
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">${gr ? 'Desviación' : 'Restante'}</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${gr && gr > v.presupuesto ? 'var(--red)' : 'var(--green)'}">
+              ${gr ? (gr > v.presupuesto ? '+' : '') + fmt(gr - v.presupuesto) : fmt(v.presupuesto)}
             </div>
           </div>
         </div>
