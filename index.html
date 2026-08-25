@@ -3414,7 +3414,7 @@ async function sbGastosExtraSync() {
     const items = gastosExtra.map(e => ({
       id: String(e.id),
       nombre: e.desc || e.nombre || '',
-      categoria: e.cat || e.categoria || '',
+      categoria: (e.cat && e.cat !== 'undefined') ? e.cat : ((e.categoria && e.categoria !== 'undefined') ? e.categoria : ''),
       importePrevisto: e.importe || 0,
       fechaPrevista: e.fecha || null,
       estado: e.estado || 'pendiente',
@@ -3444,22 +3444,27 @@ async function sbGastosExtraCargar() {
     if (!r.ok) return null;
     const rows = await r.json();
     if (!rows || rows.length === 0 || !rows[0].data?.items) return null;
-    return rows[0].data.items.map(e => ({
-      id: parseInt(e.id) || e.id,
-      desc: e.nombre || '',
-      cat: e.categoria || '',
-      importe: e.importePrevisto || 0,
-      fecha: e.fechaPrevista || '',
-      estado: e.estado || 'pendiente',
-      importeReal: e.importeReal || 0,
-      notas: e.notas || '',
-      palabrasClave: e.palabrasClave || '',
-      cuotaMensual: e.cuotaMensual || 0,
-      mesLibre: e.mesLibre || '',
-      progreso: e.progreso || 0,
-      fechaInicio: e.fechaInicio || '',
-      pagos: e.pagos || []
-    }));
+    return rows[0].data.items.map(e => {
+      const inicio = (e.planInicioAnio && e.planInicioMes) ? (e.planInicioAnio + '-' + e.planInicioMes) : (e.fechaInicio || '');
+      const libre  = (e.planMesLibreAnio && e.planMesLibreMes) ? (e.planMesLibreAnio + '-' + e.planMesLibreMes) : (e.mesLibre || '');
+      return {
+        id: e.id,
+        desc: e.nombre || '',
+        categoria: (e.categoria && e.categoria !== 'undefined') ? e.categoria : '',
+        importe: e.importePrevisto || 0,
+        fecha: e.fechaPrevista || '',
+        estado: (e.estado || 'pendiente').toLowerCase(),
+        importeReal: e.importeReal || 0,
+        notas: e.notas || '',
+        palabrasClave: e.palabrasClave || '',
+        cuotaMensual: e.cuotaMensual || e.planCuotaMensual || 0,
+        mesLibre: libre,
+        progreso: e.progresoRepuesto || e.planProgresoRepuesto || e.progreso || 0,
+        fechaInicio: inicio,
+        pagos: e.cuotasPagadas || e.pagos || [],
+        _lovable: e
+      };
+    });
   } catch(e) { return null; }
 }
 
@@ -6736,7 +6741,7 @@ function openModalExtra(id) {
 function saveExtra() {
   const id = document.getElementById('ex-edit-id').value;
   const e = {
-    id: id ? parseInt(id) : Date.now(),
+    id: id || Date.now(),
     desc: document.getElementById('ex-desc').value.trim(),
     categoria: document.getElementById('ex-categoria').value,
     importe: parseFloat(document.getElementById('ex-importe').value) || 0,
@@ -6751,7 +6756,11 @@ function saveExtra() {
     progreso: parseFloat(document.getElementById('ex-progreso').value) || 0
   };
   if (!e.desc || !e.fecha) { alert('Descripción y fecha son obligatorias.'); return; }
-  if (id) gastosExtra = gastosExtra.map(x => x.id === parseInt(id) ? e : x);
+  if (id) {
+    const prev = gastosExtra.find(x => String(x.id) === String(id));
+    if (prev && prev._lovable) e._lovable = prev._lovable;
+    gastosExtra = gastosExtra.map(x => String(x.id) === String(id) ? e : x);
+  }
   else gastosExtra.push(e);
   localStorage.setItem('wl_gastos_extra', JSON.stringify(gastosExtra));
   sbGastosExtraSync();
@@ -6863,8 +6872,15 @@ function renderGastosExtra() {
     return autoReal !== null ? {...e, importeReal: autoReal} : e;
   });
   const previsto = delYear.reduce((a,e) => a + e.importe, 0);
-  const ejecutado = delYear.filter(e => e.estado === 'pagado').reduce((a,e) => a + (e.importeReal || e.importe), 0);
-  const pendiente = delYear.filter(e => e.estado === 'pendiente').reduce((a,e) => a + e.importe, 0);
+  const ejecutado = delYear.reduce((a,e) => {
+    if ((e.cuotaMensual > 0) && e.mesLibre) {
+      const vj = viajes.find(v => v.fechaInicio && v.fechaInicio.substring(0,7) === e.mesLibre);
+      const pagadoViaje = (vj && vj.elementos) ? vj.elementos.filter(el => el.estado === 'pagado').reduce((s,el) => s + (el.precio || 0), 0) : 0;
+      return a + Math.min(e.importe, Math.max(e.progreso || 0, pagadoViaje));
+    }
+    return a + Math.min(e.importeReal || 0, e.importe);
+  }, 0);
+  const pendiente = Math.max(0, previsto - ejecutado);
   const pctEj = previsto > 0 ? Math.round(ejecutado/previsto*100) : 0;
   const mesesRest = Math.max(1, 12 - new Date().getMonth());
   const provisionMensual = pendiente / mesesRest;
@@ -6873,16 +6889,42 @@ function renderGastosExtra() {
   document.getElementById('ex-ejecutado').textContent = fmt(ejecutado);
   document.getElementById('ex-pct-ejecutado').textContent = `${pctEj}% del previsto`;
   document.getElementById('ex-pendiente').textContent = fmt(pendiente);
-  document.getElementById('ex-count-pend').textContent = `${delYear.filter(e=>e.estado==='pendiente').length} gastos`;
+  document.getElementById('ex-count-pend').textContent = `${delYear.filter(e=>(e.importeReal||0) < e.importe).length} gastos`;
   document.getElementById('ex-impacto-mensual').textContent = fmt(provisionMensual);
 
-  // Timeline
+  // Timeline — pagos con palabra clave en su mes real (como Lovable); el resto en su fecha prevista
   const mesesLabels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const porMes = Array.from({length:12}, (_,i) => ({
-    mes: i,
-    label: mesesLabels[i],
-    items: delYear.filter(e => parseInt(e.fecha?.substring(5,7))-1 === i)
-  })).filter(m => m.items.length > 0);
+  const mesesItems = Array.from({length:12}, () => []);
+  delYear.forEach(e => {
+    const palabras = (e.palabrasClave || '').split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
+    if (palabras.length > 0) {
+      transactions.filter(t => t.tipo === 'Gasto'
+        && parseInt(t.fecha?.substring(0,4)) === yearFiltro
+        && palabras.every(p => (t.desc || '').toLowerCase().includes(p)))
+        .forEach(t => {
+          const m = parseInt(t.fecha.substring(5,7)) - 1;
+          if (m >= 0 && m < 12) mesesItems[m].push({ desc: e.desc, importe: t.importe, pagado: true });
+        });
+    } else if (e.cuotaMensual > 0 && e.fechaInicio) {
+      const cuotas = _generarCuotas(e) || [];
+      let progEf = e.progreso || 0;
+      if (e.mesLibre) {
+        const vj = viajes.find(v => v.fechaInicio && v.fechaInicio.substring(0,7) === e.mesLibre);
+        if (vj && vj.elementos) progEf = Math.max(progEf, vj.elementos.filter(el => el.estado === 'pagado').reduce((s,el) => s + (el.precio || 0), 0));
+      }
+      let acumProg = 0;
+      cuotas.forEach(c => {
+        acumProg += c.cantidad;
+        if (c.anio === yearFiltro && c.mes >= 0 && c.mes < 12) {
+          mesesItems[c.mes].push({ desc: e.desc, importe: c.cantidad, pagado: acumProg <= progEf });
+        }
+      });
+    } else if (e.fecha) {
+      const m = parseInt(e.fecha.substring(5,7)) - 1;
+      if (m >= 0 && m < 12) mesesItems[m].push({ desc: e.desc, importe: e.importe, pagado: e.estado === 'pagado' });
+    }
+  });
+  const porMes = mesesItems.map((items, i) => ({ mes: i, label: mesesLabels[i], items })).filter(m => m.items.length > 0);
 
   const timelineEl = document.getElementById('ex-timeline');
   if (porMes.length === 0) {
@@ -6897,7 +6939,7 @@ function renderGastosExtra() {
         return `<div style="min-width:150px;border:1px solid ${isCurrent?'var(--accent)':isPast?'var(--surface2)':'var(--border)'};border-radius:4px;padding:12px;background:${isCurrent?'rgba(139,105,20,0.05)':'var(--surface)'}">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:${isCurrent?'var(--accent)':'var(--muted)'};font-weight:500;margin-bottom:8px">${m.label} ${yearFiltro}</div>
           ${m.items.map(e => {
-            const color = e.estado==='pagado'?'var(--green)':e.estado==='cancelado'?'var(--muted)':'var(--text)';
+            const color = e.pagado ? 'var(--green)' : 'var(--text)';
             return `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--surface2);display:flex;justify-content:space-between;align-items:center">
               <span style="color:${color};max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc}</span>
               <span style="font-family:var(--font-mono);font-size:11px;color:${color}">${fmt(e.importe)}</span>
@@ -6917,7 +6959,10 @@ function renderGastosExtra() {
     const enAnio = parseInt(e.fecha?.substring(0,4)) === yearFiltro;
     const enEstado = estadoFiltro === 'all' || e.estado === estadoFiltro;
     return enAnio && enEstado;
-  }).sort((a,b) => a.fecha.localeCompare(b.fecha));
+  }).sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e => {
+    const autoReal = calcularImporteRealDesdeTransacciones(e);
+    return autoReal !== null ? {...e, importeReal: autoReal} : e;
+  });
 
   // Para extras de ahorro ligados a un viaje (mesLibre = fechaInicio del viaje),
   // calcular automáticamente el progreso desde los elementos pagados del viaje
@@ -7012,9 +7057,9 @@ function renderGastosExtra() {
         '</div>' +
         '<div><span style="padding:3px 8px;border-radius:2px;font-size:10px;font-weight:500;background:' + st.bg + ';color:' + st.color + '">' + st.txt + '</span></div>' +
         '<div style="display:flex;gap:4px">' +
-        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openModalExtra(' + e.id + ')">✏️</button>' +
+        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openModalExtra(\'' + e.id + '\')">✏️</button>' +
         (e.estado === 'pendiente' ? '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--green);color:var(--green)" onclick="abrirPagoParcial(' + e.id + ')">💳</button>' : '') +
-        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteExtra(' + e.id + ')">🗑</button>' +
+        '<button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deleteExtra(\'' + e.id + '\')">🗑</button>' +
         '</div></div>' + cuotasHtml + '</div>';
     }).join('') + '</div>';
 }
