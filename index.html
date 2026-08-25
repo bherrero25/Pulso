@@ -760,6 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
+  <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-1</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -9581,7 +9582,16 @@ if (window.visualViewport) {
 
   // Cargar desde Supabase al iniciar
   sbTareasCargar().then(function(rows){
-    if(rows !== null){ tareasGuardar(rows); }
+    if(rows !== null){
+      // FUSIONAR nube y local (no reemplazar): las tareas de este dispositivo que
+      // no llegaron a la nube se conservan y se suben ahora mismo.
+      var locales = tareasCargar();
+      var idsNube = {};
+      rows.forEach(function(t){ idsNube[String(t.id)] = true; });
+      var soloLocales = locales.filter(function(t){ return t.id && !idsNube[String(t.id)]; });
+      soloLocales.forEach(function(t){ sbTareaUpsert(t); });
+      tareasGuardar(rows.concat(soloLocales));
+    }
     tareasRender();
   });
 })();
