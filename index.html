@@ -6872,24 +6872,38 @@ function renderGastosExtra() {
     return autoReal !== null ? {...e, importeReal: autoReal} : e;
   });
   const previsto = delYear.reduce((a,e) => a + e.importe, 0);
-  const ejecutado = delYear.reduce((a,e) => {
+  // Por cada gasto: qué se ha pagado de verdad (respetando el estado marcado a mano)
+  let ejecutadoReal = 0, ejecutadoCapado = 0, pendiente = 0, exceso = 0, nPendientes = 0;
+  delYear.forEach(e => {
+    let pagado;
     if ((e.cuotaMensual > 0) && e.mesLibre) {
+      // plan de ahorro: cubierto por progreso o por los pagos del viaje enlazado, capado a su objetivo
       const vj = viajes.find(v => v.fechaInicio && v.fechaInicio.substring(0,7) === e.mesLibre);
       const pagadoViaje = (vj && vj.elementos) ? vj.elementos.filter(el => el.estado === 'pagado').reduce((s,el) => s + (el.precio || 0), 0) : 0;
-      return a + Math.min(e.importe, Math.max(e.progreso || 0, pagadoViaje));
+      pagado = Math.min(e.importe, Math.max(e.progreso || 0, pagadoViaje));
+    } else if ((e.importeReal || 0) > 0) {
+      pagado = e.importeReal; // pagos detectados: cuenta lo real, aunque exceda lo previsto
+    } else if ((e.estado || '').toLowerCase() === 'pagado') {
+      pagado = e.importe; // marcado como pagado a mano, sin pagos detectados
+    } else {
+      pagado = 0;
     }
-    return a + Math.min(e.importeReal || 0, e.importe);
-  }, 0);
-  const pendiente = Math.max(0, previsto - ejecutado);
-  const pctEj = previsto > 0 ? Math.round(ejecutado/previsto*100) : 0;
+    ejecutadoReal += pagado;
+    ejecutadoCapado += Math.min(pagado, e.importe);
+    const falta = Math.max(0, e.importe - pagado);
+    pendiente += falta;
+    if (falta > 0) nPendientes++;
+    exceso += Math.max(0, pagado - e.importe);
+  });
+  const pctEj = previsto > 0 ? Math.round(ejecutadoCapado/previsto*100) : 0;
   const mesesRest = Math.max(1, 12 - new Date().getMonth());
   const provisionMensual = pendiente / mesesRest;
 
   document.getElementById('ex-total-previsto').textContent = fmt(previsto);
-  document.getElementById('ex-ejecutado').textContent = fmt(ejecutado);
-  document.getElementById('ex-pct-ejecutado').textContent = `${pctEj}% del previsto`;
+  document.getElementById('ex-ejecutado').textContent = fmt(ejecutadoReal);
+  document.getElementById('ex-pct-ejecutado').textContent = `${pctEj}% del previsto` + (exceso > 0 ? ` · exceso +${fmt(exceso)}` : '');
   document.getElementById('ex-pendiente').textContent = fmt(pendiente);
-  document.getElementById('ex-count-pend').textContent = `${delYear.filter(e=>(e.importeReal||0) < e.importe).length} gastos`;
+  document.getElementById('ex-count-pend').textContent = `${nPendientes} gasto${nPendientes === 1 ? '' : 's'}`;
   document.getElementById('ex-impacto-mensual').textContent = fmt(provisionMensual);
 
   // Timeline — pagos con palabra clave en su mes real (como Lovable); el resto en su fecha prevista
