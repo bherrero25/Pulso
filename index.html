@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-7</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-8</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-7';
+const PULSO_VERSION = '26.08.26-8';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3716,6 +3716,22 @@ function populateMonthFilters() {
   });
 }
 
+// ===== MODELO DE LIQUIDEZ (el de Betsabé) =====
+// El saldo inicial manual ya es TODO el dinero líquido: banco ajustado por la tarjeta
+// pendiente + efectivo del monedero. Por tanto: final = inicial + ingresos reales −
+// TODOS los gastos (banco, tarjeta y efectivo). Los reintegros no cuentan como ingreso:
+// son dinero cambiando del banco al monedero.
+function esMovimientoReintegro(t) {
+  return (((t.cat || '') + ' ' + (t.desc || '')).toLowerCase().includes('reintegro'));
+}
+function liquidezFinalMes(mes) {
+  const si = parseFloat(saldosIniciales[mes] || 0);
+  const txm = transactions.filter(t => t.fecha.startsWith(mes));
+  const ing = txm.filter(t => t.tipo === 'Ingreso' && !esMovimientoReintegro(t)).reduce((a,b)=>a+b.importe,0);
+  const gas = txm.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
+  return Math.round((si + ing - gas) * 100) / 100;
+}
+
 function formatMonth(ym) {
   const [y,m] = ym.split('-');
   const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -4161,19 +4177,12 @@ function renderPatrimonio() {
   if (activos.length === 0) {
     listA.innerHTML = '<div class="empty-state"><div class="empty-icon">🏦</div>Añade tus activos</div>';
   } else {
-    // Calcular saldo efectivo disponible desde transacciones
-    const txEfectivoGastoP = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
-    const txEfectivoIngresoP = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
-    const saldoEfectivoP = txEfectivoIngresoP.reduce((a,b)=>a+b.importe,0) - txEfectivoGastoP.reduce((a,b)=>a+b.importe,0);
-    // Usar saldo final de tesoreria del mes mas reciente para Cuenta BK
+    // Cuenta BK = liquidez total del último mes (el saldo inicial manual ya incluye
+    // el efectivo, así que NO se vuelve a sumar aparte)
     const mesesTx = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
     const ultimoMes = mesesTx[mesesTx.length-1] || '';
-    const siUltimo = parseFloat(saldosIniciales[ultimoMes] || 0);
-    const txUltimo = transactions.filter(t=>t.fecha.startsWith(ultimoMes)&&t.cuenta!=='Efectivo');
-    const ingUltimo = txUltimo.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-    const gasUltimo = txUltimo.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-    const saldoCuentaActual = siUltimo + ingUltimo - gasUltimo;
-    const totalActivos = activos.reduce((a,b) => { if (b.nombre === 'Cuenta BK' && b.tipo === 'Cuenta bancaria') { return a + saldoCuentaActual + Math.max(0, saldoEfectivoP); } return a + b.valor; }, 0);
+    const saldoCuentaActual = liquidezFinalMes(ultimoMes);
+    const totalActivos = activos.reduce((a,b) => { if (b.nombre === 'Cuenta BK' && b.tipo === 'Cuenta bancaria') { return a + saldoCuentaActual; } return a + b.valor; }, 0);
     const neto = totalActivos - totalPasivos;
     const el = document.getElementById('patrimonioTotal');
     el.textContent = fmt(neto);
@@ -4449,10 +4458,7 @@ function importCSV(input) {
       const mesesTxA = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
       if (mesesTxA.length > 0) {
         const mesR = mesesTxA[0];
-        const txR = transactions.filter(t => t.fecha.startsWith(mesR));
-        const ingR = txR.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-        const gasR = txR.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-        const saldoR = Math.round(((parseFloat(saldosIniciales[mesR]||0)) + ingR - gasR) * 100) / 100;
+        const saldoR = liquidezFinalMes(mesR); // mismo modelo que Tesorería y Patrimonio
         const idxCuenta = activos.findIndex(a => a.tipo === 'Cuenta bancaria');
         if (idxCuenta >= 0) { activos[idxCuenta].valor = saldoR; saveAll(); }
       }
@@ -4528,8 +4534,11 @@ function renderTesoreria() {
     const months = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort();
     if (months.length) saldoInicial = parseFloat(saldosIniciales[months[0]] || 0);
   }
-  // Saldo final cuenta: solo cuenta corriente (efectivo no afecta)
-  const saldoFinalCuenta = saldoInicial + ingresosCuenta - gastosCuenta;
+  // Saldo final (modelo de liquidez total): el inicial manual ya incluye el efectivo
+  // y el ajuste de la tarjeta, así que: + ingresos reales (sin reintegros) − TODOS los gastos
+  const ingresosReales = txs.filter(t => t.tipo === 'Ingreso' && !esMovimientoReintegro(t)).reduce((a,b)=>a+b.importe,0);
+  const gastosTodos = gastosCuenta + gastosEfectivo;
+  const saldoFinalCuenta = saldoInicial + ingresosReales - gastosTodos;
   // Saldo efectivo disponible - acumulado hasta el mes seleccionado inclusive
   const txsEfectivoAcum = filter === 'all'
     ? transactions.filter(t => t.cuenta === 'Efectivo')
@@ -4560,7 +4569,7 @@ function renderTesoreria() {
   setTxt('teso-final', fmt(saldoFinalConAhorro));
   // Fórmula visible: que siempre quede claro de dónde sale el número
   setTxt('teso-final-formula',
-    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosCuenta)} ingresos banco − ${fmt(gastosCuenta)} gastos banco${cuotasAhorroMes > 0 ? ` − ${fmt(cuotasAhorroMes)} ahorro previsto` : ''} · el efectivo va aparte`);
+    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosReales)} ingresos (sin reintegros) − ${fmt(gastosTodos)} gastos totales (banco, tarjeta y efectivo)${cuotasAhorroMes > 0 ? ` − ${fmt(cuotasAhorroMes)} ahorro previsto` : ''}`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
   setTxt('teso-ing-count', txsCuenta.filter(t=>t.tipo==='Ingreso').length + ' entradas');
