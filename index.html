@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-15</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-16</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-15';
+const PULSO_VERSION = '26.08.26-16';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3697,7 +3697,7 @@ function populateMonthFilters() {
   const selCat = document.getElementById('tx-categoria');
   if (selCat) {
     const actual = selCat.value;
-    const cats = [...new Set([...Object.keys(budgets || {}), ...transactions.map(t => t.cat).filter(Boolean)])].sort((a,b) => a.localeCompare(b,'es'));
+    const cats = [...new Set([...Object.keys(budgets || {}), ...transactions.map(t => t.cat).filter(Boolean), 'Traspaso'])].sort((a,b) => a.localeCompare(b,'es'));
     selCat.innerHTML = '';
     cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; selCat.appendChild(o); });
     if (actual) selCat.value = actual;
@@ -3725,15 +3725,20 @@ function populateMonthFilters() {
 function esMovimientoReintegro(t) {
   return (((t.cat || '') + ' ' + (t.desc || '')).toLowerCase().includes('reintegro'));
 }
-// MOVIMIENTO DE PASO (solo para el INFORME de ahorro): reintegros y el circuito
-// del dentista — no son sueldo tuyo ni gasto neto tuyo.
+// TRASPASO: dinero tuyo cambiando de bolsillo (p.ej. sacar de tu propio cajero).
+// Se ignora en TODA la app. Betsabé lo marca con la categoría "Traspaso".
+function esTraspaso(t) {
+  return ((t.desc || '') + ' ' + (t.cat || '')).toLowerCase().includes('traspaso');
+}
+// MOVIMIENTO DE PASO (solo para el INFORME de ahorro): traspasos, reintegros y el
+// circuito del dentista — no son sueldo tuyo ni gasto neto tuyo.
 function esMovimientoDePaso(t) {
   const texto = ((t.desc || '') + ' ' + (t.cat || '')).toLowerCase();
-  return texto.includes('reintegro') || texto.includes('pedro barrio');
+  return texto.includes('traspaso') || texto.includes('reintegro') || texto.includes('pedro barrio');
 }
 function liquidezFinalMes(mes) {
   const si = parseFloat(saldosIniciales[mes] || 0);
-  const txm = transactions.filter(t => t.fecha.startsWith(mes)); // cuenta TODO: Betsabé no tiene reintegros de su propio cajero
+  const txm = transactions.filter(t => t.fecha.startsWith(mes) && !esTraspaso(t)); // cuenta todo salvo traspasos (categoría "Traspaso")
   const ing = txm.filter(t => t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
   const gas = txm.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
   return Math.round((si + ing - gas) * 100) / 100;
@@ -4538,8 +4543,8 @@ function renderTesoreria() {
   // y el ajuste de la tarjeta. Solo se excluyen los TRASPASOS INTERNOS (sacar del
   // cajero); el circuito del dentista SÍ cuenta — son cheques externos cobrados en
   // efectivo y pagos reales (validado contra los saldos medidos por Betsabé).
-  const ingresosReales = txs.filter(t => t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
-  const gastosReales = txs.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
+  const ingresosReales = txs.filter(t => t.tipo === 'Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const gastosReales = txs.filter(t => t.tipo === 'Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
   const saldoFinalCuenta = saldoInicial + ingresosReales - gastosReales;
   // Saldo efectivo disponible - acumulado hasta el mes seleccionado inclusive
   const txsEfectivoAcum = filter === 'all'
@@ -4573,11 +4578,11 @@ function renderTesoreria() {
   setTxt('teso-final', fmt(saldoFinalCuenta));
   // Fórmula visible: que siempre quede claro de dónde sale el número
   setTxt('teso-final-formula',
-    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
+    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${txs.some(esTraspaso) ? ' \u00b7 traspasos ignorados' : ''}${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalCuenta >= 0 ? 'var(--green)' : 'var(--red)';
-  setTxt('teso-ing-count', txs.filter(t=>t.tipo==='Ingreso').length + ' entradas (banco y efectivo)');
-  setTxt('teso-gas-count', txs.filter(t=>t.tipo==='Gasto').length + ' salidas (banco, tarjeta y efectivo)');
+  setTxt('teso-ing-count', txs.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).length + ' entradas (banco y efectivo)');
+  setTxt('teso-gas-count', txs.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).length + ' salidas (banco, tarjeta y efectivo)');
   setTxt('teso-efec-count', txsEfectivo.length + ' mov.');
   // Saldo efectivo disponible
   const efecDisp = document.getElementById('teso-efec-disp');
