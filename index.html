@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-6</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-7</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1174,7 +1174,7 @@
       <div class="teso-block">
         <div class="teso-label">Saldo Final cuenta</div>
         <div class="teso-value" id="teso-final">—</div>
-        <div class="teso-sub">Saldo inicial editable ↓</div>
+        <div class="teso-sub" id="teso-final-formula">Saldo inicial editable ↓</div>
       </div>
     </div>
 
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-6';
+const PULSO_VERSION = '26.08.26-7';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4558,6 +4558,9 @@ function renderTesoreria() {
   setTxt('teso-ing-efectivo', fmt(ingresosEfectivo));
   setTxt('teso-gastos', fmt(gastosCuenta));
   setTxt('teso-final', fmt(saldoFinalConAhorro));
+  // Fórmula visible: que siempre quede claro de dónde sale el número
+  setTxt('teso-final-formula',
+    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosCuenta)} ingresos banco − ${fmt(gastosCuenta)} gastos banco${cuotasAhorroMes > 0 ? ` − ${fmt(cuotasAhorroMes)} ahorro previsto` : ''} · el efectivo va aparte`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalConAhorro >= 0 ? 'var(--green)' : 'var(--red)';
   setTxt('teso-ing-count', txsCuenta.filter(t=>t.tipo==='Ingreso').length + ' entradas');
