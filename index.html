@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-13</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-14</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1153,20 +1153,20 @@
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">+ Ingresos cuenta</div>
+        <div class="teso-label">+ Ingresos del mes</div>
         <div class="teso-value" style="color:var(--green)" id="teso-ingresos">—</div>
         <div class="teso-sub" id="teso-ing-count">0 entradas</div>
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block" style="opacity:0.75;border-style:dashed">
-        <div class="teso-label" style="color:var(--muted)">↕ Efectivo</div>
-        <div class="teso-value" style="font-size:15px" id="teso-ing-efectivo">—</div>
+        <div class="teso-label" style="color:var(--muted)">↕ De ello, en efectivo</div>
+        <div class="teso-value" style="font-size:14px" id="teso-ing-efectivo">—</div>
         <div class="teso-sub" id="teso-efec-count">0 mov.</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">Disp: <span id="teso-efec-disp">—</span></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">Monedero: <span id="teso-efec-disp">—</span></div>
         <div class="teso-arrow" style="color:var(--muted)">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">− Gastos cuenta</div>
+        <div class="teso-label">− Gastos del mes</div>
         <div class="teso-value" style="color:var(--red)" id="teso-gastos">—</div>
         <div class="teso-sub" id="teso-gas-count">0 salidas</div>
         <div class="teso-arrow">→</div>
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-13';
+const PULSO_VERSION = '26.08.26-14';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4574,17 +4574,18 @@ function renderTesoreria() {
   // Actualizar bloques HTML (5 bloques)
   const setTxt = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
   setTxt('teso-inicial', fmt(saldoInicial));
-  setTxt('teso-ingresos', fmt(ingresosCuenta));
-  setTxt('teso-ing-efectivo', fmt(ingresosEfectivo));
-  setTxt('teso-gastos', fmt(gastosCuenta));
+  // Todos los recuadros cuentan la MISMA película que la fórmula del saldo final
+  setTxt('teso-ingresos', fmt(ingresosReales));
+  setTxt('teso-ing-efectivo', `+${fmt(ingresosEfectivo)} · −${fmt(gastosEfectivo)}`);
+  setTxt('teso-gastos', fmt(gastosReales));
   setTxt('teso-final', fmt(saldoFinalCuenta));
   // Fórmula visible: que siempre quede claro de dónde sale el número
   setTxt('teso-final-formula',
     `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo; los reintegros del cajero no cuentan)${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalCuenta >= 0 ? 'var(--green)' : 'var(--red)';
-  setTxt('teso-ing-count', txsCuenta.filter(t=>t.tipo==='Ingreso').length + ' entradas');
-  setTxt('teso-gas-count', txsCuenta.filter(t=>t.tipo==='Gasto').length + ' salidas');
+  setTxt('teso-ing-count', txs.filter(t=>t.tipo==='Ingreso' && !esTraspasoInterno(t)).length + ' entradas (banco y efectivo)');
+  setTxt('teso-gas-count', txs.filter(t=>t.tipo==='Gasto' && !esTraspasoInterno(t)).length + ' salidas (banco, tarjeta y efectivo)');
   setTxt('teso-efec-count', txsEfectivo.length + ' mov.');
   // Saldo efectivo disponible
   const efecDisp = document.getElementById('teso-efec-disp');
