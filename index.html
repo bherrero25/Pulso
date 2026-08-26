@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-16</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-17</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-16';
+const PULSO_VERSION = '26.08.26-17';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4601,15 +4601,10 @@ function renderTesoreria() {
         <div style="padding:8px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);border-bottom:1px solid var(--border)">Saldo Final calculado</div>
       </div>
       ${months.map(m => {
-        const mTxCuenta = transactions.filter(t=>t.fecha.startsWith(m) && t.cuenta !== 'Efectivo');
-        const mIng = mTxCuenta.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-        const mGas = mTxCuenta.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-        const mEfecAcum = transactions.filter(t=>t.cuenta==='Efectivo' && t.fecha.substring(0,7)<=m);
-        const mEfecIng = mEfecAcum.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-        const mEfecGas = mEfecAcum.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-        const efectivoAcum = mEfecIng - mEfecGas;
+        // LA MISMA fórmula que arriba y que en toda la app:
+        // final = inicial + todos los ingresos − todos los gastos (sin traspasos)
         const si = parseFloat(saldosIniciales[m] || 0);
-        const sf = si + mIng - mGas + efectivoAcum;
+        const sf = liquidezFinalMes(m);
         return `<div style="display:grid;grid-template-columns:120px 160px 1fr;gap:0;border-bottom:1px solid rgba(35,40,48,0.5)">
           <div style="padding:11px 16px;font-size:13px">${formatMonth(m)}</div>
           <div style="padding:8px 16px">
