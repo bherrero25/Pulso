@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-9</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-10</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-9';
+const PULSO_VERSION = '26.08.26-10';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4188,19 +4188,12 @@ function renderPatrimonio() {
     el.textContent = fmt(neto);
     el.className = 'net-number ' + (neto>=0?'net-positive':'net-negative');
 
-    // Para Cuenta BK: saldo cuenta corriente = valor activo - efectivo disponible
+    // Cuenta BK = liquidez total (el saldo inicial manual ya incluye el efectivo)
     listA.innerHTML = activos.map(a => {
       const esCuentaBK = a.nombre === 'Cuenta BK' && a.tipo === 'Cuenta bancaria';
       const subdetalle = esCuentaBK ? `
-        <div style="margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;font-size:11px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--muted)">
-            <span>↳ Cuenta corriente</span>
-            <span style="font-family:var(--font-mono);color:var(--text)">${fmt(Math.max(0, saldoCuentaActual))}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;color:var(--muted)">
-            <span>↳ Efectivo disponible</span>
-            <span style="font-family:var(--font-mono);color:var(--green)">${fmt(Math.max(0, saldoEfectivoP))}</span>
-          </div>
+        <div style="margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;font-size:11px;color:var(--muted)">
+          ↳ Liquidez total del último mes: saldo inicial (banco − tarjeta + efectivo) + ingresos sin reintegros − todos los gastos
         </div>` : '';
       return `
       <div class="fund-row" style="padding:10px 0">
@@ -4210,7 +4203,7 @@ function renderPatrimonio() {
             <div class="fund-ticker">${a.tipo}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${esCuentaBK ? fmt(saldoCuentaActual + Math.max(0, saldoEfectivoP)) : fmt(a.valor)}</span>
+            <span id="activo-valor-display-${a.id}" onclick="editActivoValor(${a.id})" style="font-family:var(--font-mono);color:var(--green);cursor:pointer;text-decoration:underline dotted">${esCuentaBK ? fmt(saldoCuentaActual) : fmt(a.valor)}</span>
             <button onclick="deleteActivo(${a.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">✕</button>
           </div>
         </div>
