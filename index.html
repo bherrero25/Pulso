@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-17</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.08.26-18</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.08.26-17';
+const PULSO_VERSION = '26.08.26-18';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4914,7 +4914,7 @@ function importInvesting(input) {
       } else {
         historicoCartera.push(snapshot);
       }
-      historicoCartera.sort((a,b) => a.fecha.localeCompare(b.fecha));
+      historicoCartera.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 
       // Auto-actualizar activo tipo Inversiones con valor total de fondos
       const totalFondos = Math.round(funds.reduce((a,b)=>a+b.valor,0) * 100) / 100;
@@ -5170,7 +5170,7 @@ function guardarSnapshotPatrimonio() {
   } else {
     historicoPatrimonio.push(snap);
   }
-  historicoPatrimonio.sort((a,b) => a.fecha.localeCompare(b.fecha));
+  historicoPatrimonio.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
   localStorage.setItem('wl_hist_patrimonio', JSON.stringify(historicoPatrimonio));
   saveAll();
   renderPatrimonioHistorico();
@@ -6992,7 +6992,7 @@ function renderGastosExtra() {
       });
     } else if (e.fecha) {
       const m = parseInt(e.fecha.substring(5,7)) - 1;
-      if (m >= 0 && m < 12) mesesItems[m].push({ desc: e.desc, importe: e.importe, pagado: e.estado === 'pagado' });
+      if (m >= 0 && m < 12) mesesItems[m].push({ desc: e.desc, importe: e.importe, pagado: (e.estado||'').toLowerCase() === 'pagado' });
     }
   });
   const porMes = mesesItems.map((items, i) => ({ mes: i, label: mesesLabels[i], items })).filter(m => m.items.length > 0);
@@ -7030,7 +7030,7 @@ function renderGastosExtra() {
     const enAnio = parseInt(e.fecha?.substring(0,4)) === yearFiltro;
     const enEstado = estadoFiltro === 'all' || e.estado === estadoFiltro;
     return enAnio && enEstado;
-  }).sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e => {
+  }).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'')).map(e => {
     const autoReal = calcularImporteRealDesdeTransacciones(e);
     let out = autoReal !== null ? {...e, importeReal: autoReal} : {...e};
     // mismo objetivo dinámico que en los KPI: los planes ligados a un viaje
@@ -7193,8 +7193,8 @@ function renderSemaforo() {
   const hoy = new Date();
   const mes = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
   const txMes = transactions.filter(t => t.fecha.startsWith(mes));
-  const ingresos = txMes.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-  const gastos   = txMes.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
+  const ingresos = txMes.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const gastos   = txMes.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
   const diasMes  = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
   const diaHoy   = hoy.getDate();
   const pctMes   = diaHoy / diasMes;
@@ -7667,8 +7667,8 @@ function renderCierre() {
   if (!sel) return;
   const mes = sel.value || (new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0'));
   const txMes    = transactions.filter(t => t.fecha.startsWith(mes));
-  const ingresos = txMes.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-  const gastos   = txMes.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
+  const ingresos = txMes.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const gastos   = txMes.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
   const ahorro   = ingresos - gastos;
   const ahorroP  = ingresos > 0 ? (ahorro/ingresos*100).toFixed(1) : 0;
   const setEl = (id, v, color) => { const e=document.getElementById(id); if(e){e.textContent=v; if(color)e.style.color=color;} };
@@ -7781,8 +7781,8 @@ function guardarCierreMes() {
   const mes = sel?.value;
   if (!mes) return alert('Selecciona un mes');
   const txMes    = transactions.filter(t => t.fecha.startsWith(mes));
-  const ingresos = txMes.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
-  const gastos   = txMes.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
+  const ingresos = txMes.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const gastos   = txMes.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
   const ahorro   = ingresos - gastos;
   const ahorroP  = ingresos > 0 ? (ahorro/ingresos*100).toFixed(1) : '0';
   const cierre   = { mes, ingresos, gastos, ahorro, ahorroP, fechaGuardado: new Date().toISOString().split('T')[0] };
@@ -7947,7 +7947,7 @@ function saveEventoAgenda() {
   } else {
     agendaEventos.push(evento);
   }
-  agendaEventos.sort((a,b) => a.fecha.localeCompare(b.fecha));
+  agendaEventos.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
   saveAgenda();
   sbAgendaUpsert(evento);
   closeModal('modalAgenda');
@@ -7995,7 +7995,7 @@ function renderAgendaAlertas() {
     if (e.estado === 'hecho' || e.estado === 'cancelado') return false;
     const d = new Date(e.fecha + 'T00:00:00');
     return d >= hoy && d <= en7;
-  }).sort((a,b) => a.fecha.localeCompare(b.fecha));
+  }).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 
   // Alertas de cuotas de ahorro/reposición del mes actual
   const mesActualKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
@@ -8157,7 +8157,7 @@ function renderAgenda() {
   // Lista del mes
   let eventos = eventosMes;
   if (tipoFilter !== 'all') eventos = eventos.filter(e => e.tipo === tipoFilter);
-  eventos = [...eventos].sort((a,b) => a.fecha.localeCompare(b.fecha));
+  eventos = [...eventos].sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 
   if (!listaEl) return;
   if (eventos.length === 0) {
@@ -8279,7 +8279,7 @@ function _renderMovilNicolas() {
     t.tipo === 'Ingreso' &&
     t.desc && t.desc.toLowerCase().includes('movil') &&
     t.desc.toLowerCase().includes('nico')
-  ).sort((a,b) => a.fecha.localeCompare(b.fecha));
+  ).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 
   if (pagosMovil.length === 0) return '';
 
@@ -8855,8 +8855,8 @@ function _abrirVentanaPDF(mesActual, meses) {
     'function renderMes(mes) {',
     '  document.getElementById("sel-mes").value = mes;',
     '  var txMes=datos.transactions.filter(function(t){return t.fecha.startsWith(mes);});',
-    '  var ingresos=txMes.filter(function(t){return t.tipo==="Ingreso";}).reduce(function(a,b){return a+b.importe;},0);',
-    '  var gastos=txMes.filter(function(t){return t.tipo==="Gasto";}).reduce(function(a,b){return a+b.importe;},0);',
+    '  var ingresos=txMes.filter(function(t){return t.tipo==="Ingreso"&&(((t.desc||"")+" "+(t.cat||"")).toLowerCase().indexOf("traspaso")<0);}).reduce(function(a,b){return a+b.importe;},0);',
+    '  var gastos=txMes.filter(function(t){return t.tipo==="Gasto"&&(((t.desc||"")+" "+(t.cat||"")).toLowerCase().indexOf("traspaso")<0);}).reduce(function(a,b){return a+b.importe;},0);',
     '  var ahorro=ingresos-gastos; var tasa=ingresos>0?(ahorro/ingresos*100).toFixed(1):"0.0";',
     '  var saldoInicial=parseFloat(datos.saldosIniciales[mes]||0);',
     '  var saldoFinal=saldoInicial+ingresos-gastos;',
@@ -8941,7 +8941,7 @@ function renderAgendaAlertas() {
     if (e.estado === 'hecho' || e.estado === 'cancelado') return false;
     const d = new Date(e.fecha + 'T00:00:00');
     return d >= hoy && d <= en7;
-  }).sort((a,b) => a.fecha.localeCompare(b.fecha));
+  }).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 
   // Alertas de cuotas de ahorro/reposición del mes actual
   const mesActualKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
@@ -9074,6 +9074,29 @@ function mostrarInformeAnual(anio) {
   const margenMes = ingTipico - mesBase;
   const ahorroRealMes = (totIng - totGas) / nM;
 
+  // ===== Evolución del saldo (inicial → final por mes, con sus porqués) =====
+  const evolucionMeses = Object.keys(saldosIniciales)
+    .filter(m => m.startsWith(String(anio)) && parseFloat(saldosIniciales[m] || 0) > 0)
+    .sort();
+  const evolucionFilas = evolucionMeses.map((m, idx) => {
+    const ini = parseFloat(saldosIniciales[m]);
+    const fin = liquidezFinalMes(m);
+    const variacion = Math.round((fin - ini) * 100) / 100;
+    // porqués: top 2 categorías de gasto del mes (sin traspasos) + ingresos atípicos
+    const txm = transactions.filter(t => t.fecha.startsWith(m) && !esTraspaso(t));
+    const catsM = {};
+    txm.filter(t => t.tipo === 'Gasto').forEach(t => { catsM[t.cat || 'Sin categoría'] = (catsM[t.cat || 'Sin categoría'] || 0) + t.importe; });
+    const topM = Object.entries(catsM).sort((a,b) => b[1] - a[1]).slice(0, 2);
+    const ingM = txm.filter(t => t.tipo === 'Ingreso').reduce((a,b) => a + b.importe, 0);
+    const porques = [];
+    if (typeof ingTipico === 'number' && ingM > ingTipico * 1.2) porques.push(`ingresos altos (${fmt(Math.round(ingM))})`);
+    topM.forEach(([c, v]) => porques.push(`${c} ${fmt(Math.round(v))}`));
+    // ajuste real: el inicial que pusiste el mes siguiente
+    const sig = evolucionMeses[idx + 1];
+    const ajuste = sig ? Math.round((parseFloat(saldosIniciales[sig]) - fin) * 100) / 100 : null;
+    return { m, ini, fin, variacion, porques, ajuste };
+  });
+
   // destacados
   const mesCaro = [...porMes].sort((a,b)=>b.gas-a.gas)[0];
   const mesAhorro = [...porMes].sort((a,b)=>b.bal-a.bal)[0];
@@ -9130,6 +9153,25 @@ function mostrarInformeAnual(anio) {
         Este año llevas un ahorro real de <strong style="color:${ahorroRealMes>=0?'var(--green)':'var(--red)'}">${fmt(Math.round(ahorroRealMes))}/mes</strong> de media —
         una cuota de ahorro cómoda y sostenible para ti estaría entre <strong>${fmt(Math.max(0, Math.round(margenMes*0.3)))}</strong> y <strong>${fmt(Math.max(0, Math.round(margenMes*0.5)))}</strong> al mes.
       </div>
+
+      ${evolucionFilas.length ? `${seccion('Evolución del saldo')}
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead><tr>
+          <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Mes</th>
+          <th style="padding:7px 8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Inicial (tuyo)</th>
+          <th style="padding:7px 8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Final (calc.)</th>
+          <th style="padding:7px 8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Variación</th>
+          <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Se debe sobre todo a</th>
+        </tr></thead>
+        <tbody>${evolucionFilas.map(f => `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 8px">${mesesL[parseInt(f.m.substring(5,7)) - 1]}</td>
+          <td style="padding:7px 8px;text-align:right;font-family:var(--font-mono)">${fmt(f.ini)}</td>
+          <td style="padding:7px 8px;text-align:right;font-family:var(--font-mono)">${fmt(f.fin)}</td>
+          <td style="padding:7px 8px;text-align:right;font-family:var(--font-mono);color:${f.variacion >= 0 ? 'var(--green)' : 'var(--red)'}">${f.variacion >= 0 ? '+' : ''}${fmt(f.variacion)}</td>
+          <td style="padding:7px 8px;color:var(--muted)">${f.porques.join(' · ') || '—'}${f.ajuste !== null ? `<div style="font-size:10px;margin-top:2px">al medir el mes siguiente ajustaste ${f.ajuste >= 0 ? '+' : ''}${fmt(f.ajuste)} (efectivo/visa)</div>` : ''}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:6px">El final calculado usa todos tus movimientos (incluido el circuito del dentista, que sí mueve tu dinero); el resto del informe lo excluye por no ser ingreso/gasto neto tuyo.</div>` : ''}
 
       ${seccion('Mes a mes')}
       <table style="width:100%;border-collapse:collapse;font-size:13px">
