@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-2</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-3</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-2';
+const PULSO_VERSION = '26.09.16-3';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3727,6 +3727,11 @@ function esMovimientoReintegro(t) {
 }
 // TRASPASO: dinero tuyo cambiando de bolsillo (p.ej. sacar de tu propio cajero).
 // Se ignora en TODA la app. Betsabé lo marca con la categoría "Traspaso".
+// Una categoría solo "se pasa" si excede el presupuesto en más del 5% Y más de 5 €
+// (evita falsas alarmas por céntimos: Netflix que sube 1 €, la hipoteca 5 €...)
+function sePasaDePresupuesto(real, presupuesto) {
+  return real > presupuesto * 1.05 && (real - presupuesto) > 5;
+}
 function esTraspaso(t) {
   return ((t.desc || '') + ' ' + (t.cat || '')).toLowerCase().includes('traspaso');
 }
@@ -5478,7 +5483,7 @@ function renderSaludFinanciera() {
   const catData = {};
   txsMes.filter(t=>t.tipo==='Gasto').forEach(t => { catData[t.cat] = (catData[t.cat]||0) + t.importe; });
   const catsConBudget = Object.keys(budgets).filter(c => budgets[c] > 0);
-  const excedidos = catsConBudget.filter(c => (catData[c]||0) > budgets[c]).length;
+  const excedidos = catsConBudget.filter(c => sePasaDePresupuesto(catData[c]||0, budgets[c])).length;
   const pctBudgetOK = catsConBudget.length > 0 ? (1 - excedidos/catsConBudget.length)*100 : 100;
 
   // Patrimonio neto positivo
@@ -7204,7 +7209,7 @@ function renderSemaforo() {
   Object.keys(budgets).forEach(cat => {
     if (!(budgets[cat] > 0)) return; // las de presupuesto 0 no cuentan como "pasadas" (misma regla que Análisis)
     const real = txMes.filter(t=>t.cat===cat&&t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-    if (real > budgets[cat]) { catAlerts++; catsPasadas.push(cat); }
+    if (sePasaDePresupuesto(real, budgets[cat])) { catAlerts++; catsPasadas.push(cat); }
   });
   // El color lo decide EL AHORRO (lo que importa); las categorías son información con nombres.
   const pctAhorro = ingresos > 0 ? Math.round((1 - ratio) * 100) : null;
@@ -7220,10 +7225,10 @@ function renderSemaforo() {
     detalle = `Gastas más de lo que ingresas: ${fmt(gastos)} de ${fmt(ingresos)} (ahorro ${pctAhorro}%)${infoCats}`;
   } else if (ratio >= 0.85 || catAlerts > 5) {
     color = 'rgba(184,144,31,0.12)'; emoji = '🟡'; titulo = 'Mes en amarillo';
-    detalle = `Ahorro del ${pctAhorro}% hasta hoy (${fmt(gastos)} de ${fmt(ingresos)})${infoCats}`;
+    detalle = `Ahorro del ${pctAhorro}% hasta hoy — gastados ${fmt(gastos)} de ${fmt(ingresos)} ingresados${infoCats}`;
   } else {
     color = 'rgba(61,122,92,0.12)'; emoji = '🟢'; titulo = 'Mes en verde';
-    detalle = `Ahorro del ${pctAhorro}% hasta hoy (${fmt(gastos)} gastados de ${fmt(ingresos)})${infoCats}`;
+    detalle = `Ahorro del ${pctAhorro}% hasta hoy — gastados ${fmt(gastos)} de ${fmt(ingresos)} ingresados${infoCats}`;
   }
   const ahorro = ingresos - gastos;
   el.style.background = color;
