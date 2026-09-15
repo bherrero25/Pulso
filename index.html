@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-6</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-7</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1162,7 +1162,7 @@
         <div class="teso-label" style="color:var(--muted)">↕ De ello, en efectivo</div>
         <div class="teso-value" style="font-size:14px" id="teso-ing-efectivo">—</div>
         <div class="teso-sub" id="teso-efec-count">0 mov.</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">Monedero: <span id="teso-efec-disp">—</span></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">Monedero (quedan): <span id="teso-efec-disp">—</span> · ya incluido en los totales</div>
         <div class="teso-arrow" style="color:var(--muted)">→</div>
       </div>
       <div class="teso-block">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-6';
+const PULSO_VERSION = '26.09.16-7';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3756,6 +3756,31 @@ function liquidezFinalMes(mes) {
 }
 
 // Total de activos con la Cuenta BK VIVA (nunca el valor guardado del último import)
+// EL MONEDERO — única calculadora del efectivo en mano (la misma que usa Control de
+// Efectivo): transacciones en efectivo + retiradas y gastos apuntados en el widget,
+// arrastrando el sobrante de cada mes al siguiente.
+function saldoMonederoHasta(mesLimite) {
+  const txG = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Gasto');
+  const txI = transactions.filter(t => t.cuenta === 'Efectivo' && t.tipo === 'Ingreso');
+  const mesesSet = new Set([
+    ...retiradaEfectivo.map(r => r.mes),
+    ...txG.map(t => t.fecha.substring(0, 7)),
+    ...txI.map(t => t.fecha.substring(0, 7)),
+    ...gastosEfectivoLocal.map(g => g.mes)
+  ]);
+  const mesesAsc = [...mesesSet].sort();
+  let carry = 0;
+  for (const mes of mesesAsc) {
+    if (mesLimite && mes > mesLimite) break;
+    const ret = retiradaEfectivo.filter(r => r.mes === mes).reduce((s, r) => s + r.importe, 0);
+    const ingTx = txI.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
+    const gasTx = txG.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
+    const gasLocal = gastosEfectivoLocal.filter(g => g.mes === mes).reduce((s, g) => s + g.importe, 0);
+    carry = Math.max(0, carry + ret + ingTx - gasTx - gasLocal);
+  }
+  return Math.round(carry * 100) / 100;
+}
+
 function totalActivosVivo() {
   const meses = [...new Set(transactions.map(t => t.fecha.substring(0,7)))].sort();
   const um = meses[meses.length - 1] || new Date().toISOString().substring(0, 7);
@@ -4570,7 +4595,7 @@ function renderTesoreria() {
     : transactions.filter(t => t.cuenta === 'Efectivo' && t.fecha.substring(0,7) <= filter);
   const ingEfecAcum = txsEfectivoAcum.filter(t=>t.tipo==='Ingreso').reduce((a,b)=>a+b.importe,0);
   const gasEfecAcum = txsEfectivoAcum.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-  const saldoEfectivo = ingEfecAcum - gasEfecAcum;
+  const saldoEfectivo = saldoMonederoHasta(filter === 'all' ? null : filter); // única calculadora del monedero
 
   // Incluir cuotas de ahorro/reposición del mes como salida prevista
   let cuotasAhorroMes = 0;
@@ -4599,7 +4624,7 @@ function renderTesoreria() {
   setTxt('teso-final', fmt(saldoFinalCuenta));
   // Fórmula visible: que siempre quede claro de dónde sale el número
   setTxt('teso-final-formula',
-    `= ${fmt(saldoInicial)} inicial + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${txs.some(esTraspaso) ? ' \u00b7 traspasos ignorados' : ''}${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
+    `= ${fmt(saldoInicial)} inicial (ya incluye tu efectivo) + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${txs.some(esTraspaso) ? ' \u00b7 traspasos ignorados' : ''}` + ` · composición: ~${fmt(Math.max(0, saldoFinalCuenta - saldoEfectivo))} banco + ~${fmt(saldoEfectivo)} monedero` + `${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalCuenta >= 0 ? 'var(--green)' : 'var(--red)';
   setTxt('teso-ing-count', txs.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).length + ' entradas (banco y efectivo)');
@@ -7562,16 +7587,11 @@ function renderEfectivo() {
   const meses = [...mesesSet].sort((a, b) => b.localeCompare(a));
   const mesesAsc = [...meses].reverse();
 
-  // Carry-over: el sobrante de un mes pasa al siguiente
+  // Carry-over: el sobrante de un mes pasa al siguiente — MISMA calculadora que el
+  // "Monedero" del flujo de tesorería (saldoMonederoHasta), una sola fuente de verdad
   const saldoInicialMes = {};
-  let carry = 0;
-  for (const mes of mesesAsc) {
-    saldoInicialMes[mes] = carry;
-    const ret = retiradaEfectivo.filter(r => r.mes === mes).reduce((s, r) => s + r.importe, 0);
-    const ingTx = txEfectivoIngreso.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
-    const gastoTx = txEfectivoGasto.filter(t => t.fecha.startsWith(mes)).reduce((s, t) => s + t.importe, 0);
-    const gastoLocal = gastosEfectivoLocal.filter(g => g.mes === mes).reduce((s, g) => s + g.importe, 0);
-    carry = Math.max(0, saldoInicialMes[mes] + ret + ingTx - gastoTx - gastoLocal);
+  for (let i = 0; i < mesesAsc.length; i++) {
+    saldoInicialMes[mesesAsc[i]] = i === 0 ? 0 : saldoMonederoHasta(mesesAsc[i - 1]);
   }
 
   el.innerHTML = meses.map((mes, idx) => {
