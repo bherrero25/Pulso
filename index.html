@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-4</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-5</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1138,7 +1138,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div class="section-label" style="margin-bottom:0">FLUJO DE TESORERÍA</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select class="month-selector" style="padding:5px 10px;font-size:12px;" id="tesoMonthFilter" onchange="renderTesoreria()">
+        <select class="month-selector" style="padding:5px 10px;font-size:12px;" id="tesoMonthFilter" onchange="this.dataset.eleccionUsuario='1'; renderTesoreria()">
           <option value="all">Todos los meses</option>
         <option value="2026-03">Mar 2026</option><option value="2026-02">Feb 2026</option><option value="2026-01">Ene 2026</option></select>
       </div>
@@ -1153,7 +1153,7 @@
         <div class="teso-arrow">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">+ Ingresos del mes</div>
+        <div class="teso-label" id="teso-lbl-ing">+ Ingresos del mes</div>
         <div class="teso-value" style="color:var(--green)" id="teso-ingresos">—</div>
         <div class="teso-sub" id="teso-ing-count">0 entradas</div>
         <div class="teso-arrow">→</div>
@@ -1166,7 +1166,7 @@
         <div class="teso-arrow" style="color:var(--muted)">→</div>
       </div>
       <div class="teso-block">
-        <div class="teso-label">− Gastos del mes</div>
+        <div class="teso-label" id="teso-lbl-gas">− Gastos del mes</div>
         <div class="teso-value" style="color:var(--red)" id="teso-gastos">—</div>
         <div class="teso-sub" id="teso-gas-count">0 salidas</div>
         <div class="teso-arrow">→</div>
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-4';
+const PULSO_VERSION = '26.09.16-5';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3714,6 +3714,12 @@ function populateMonthFilters() {
       sel.appendChild(opt);
     });
   });
+  // Tesorería: por defecto el MES ACTUAL (no "todos"), salvo elección manual
+  const selTeso = document.getElementById('tesoMonthFilter');
+  if (selTeso && !selTeso.dataset.eleccionUsuario) {
+    const mesActual = new Date().toISOString().substring(0, 7);
+    if ([...selTeso.options].some(o => o.value === mesActual)) selTeso.value = mesActual;
+  }
 }
 
 // ===== MODELO DE LIQUIDEZ (el de Betsabé) =====
@@ -4575,6 +4581,9 @@ function renderTesoreria() {
 
   // Actualizar bloques HTML (5 bloques)
   const setTxt = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const etiquetaPeriodo = filter === 'all' ? 'del período (todos los meses)' : 'del mes';
+  setTxt('teso-lbl-ing', '+ Ingresos ' + etiquetaPeriodo);
+  setTxt('teso-lbl-gas', '− Gastos ' + etiquetaPeriodo);
   setTxt('teso-inicial', fmt(saldoInicial));
   // Todos los recuadros cuentan la MISMA película que la fórmula del saldo final
   setTxt('teso-ingresos', fmt(ingresosReales));
@@ -5493,7 +5502,8 @@ function renderSaludFinanciera() {
   const ratioDeuda = totalActivos > 0 ? totalPasivos/totalActivos*100 : 0;
 
   // Fondo de emergencia (meses de gastos cubiertos por liquidez)
-  const liquidez = activos.filter(a => a.tipo==='Cuenta bancaria').reduce((a,b)=>a+b.valor,0);
+  // Liquidez VIVA: la Cuenta BK se calcula al momento (no el valor guardado en el último import)
+  const liquidez = activos.filter(a => a.tipo==='Cuenta bancaria').reduce((a,b)=>a + ((b.nombre === 'Cuenta BK') ? liquidezFinalMes(ultimoMes) : b.valor), 0);
   const gastoMedioMes = meses.length > 0
     ? transactions.filter(t=>t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0) / meses.length
     : gastos;
