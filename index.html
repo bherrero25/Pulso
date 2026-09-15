@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-5</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-6</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-5';
+const PULSO_VERSION = '26.09.16-6';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3753,6 +3753,13 @@ function liquidezFinalMes(mes) {
   const ing = txm.filter(t => t.tipo === 'Ingreso').reduce((a,b)=>a+b.importe,0);
   const gas = txm.filter(t => t.tipo === 'Gasto').reduce((a,b)=>a+b.importe,0);
   return Math.round((si + ing - gas) * 100) / 100;
+}
+
+// Total de activos con la Cuenta BK VIVA (nunca el valor guardado del último import)
+function totalActivosVivo() {
+  const meses = [...new Set(transactions.map(t => t.fecha.substring(0,7)))].sort();
+  const um = meses[meses.length - 1] || new Date().toISOString().substring(0, 7);
+  return activos.reduce((a, b) => a + ((b.nombre === 'Cuenta BK' && b.tipo === 'Cuenta bancaria') ? liquidezFinalMes(um) : b.valor), 0);
 }
 
 function formatMonth(ym) {
@@ -5167,7 +5174,7 @@ function renderAlertasPresupuesto(catData, budgets) {
 // ===== HISTÓRICO PATRIMONIO =====
 
 function guardarSnapshotPatrimonio() {
-  const totalActivos = activos.reduce((a,b)=>a+b.valor,0);
+  const totalActivos = totalActivosVivo(); // Cuenta BK siempre viva
   const totalPasivos = pasivos.reduce((a,b)=>a+b.valor,0);
   const neto = totalActivos - totalPasivos;
   const hoy = new Date();
@@ -5496,7 +5503,7 @@ function renderSaludFinanciera() {
   const pctBudgetOK = catsConBudget.length > 0 ? (1 - excedidos/catsConBudget.length)*100 : 100;
 
   // Patrimonio neto positivo
-  const totalActivos = activos.reduce((a,b)=>a+b.valor,0);
+  const totalActivos = totalActivosVivo(); // Cuenta BK siempre viva
   const totalPasivos = pasivos.reduce((a,b)=>a+b.valor,0);
   const patrimonioNeto = totalActivos - totalPasivos;
   const ratioDeuda = totalActivos > 0 ? totalPasivos/totalActivos*100 : 0;
