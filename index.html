@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-3</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-4</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-3';
+const PULSO_VERSION = '26.09.16-4';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -5535,7 +5535,7 @@ function renderSaludFinanciera() {
     valor: mesesEmergencia.toFixed(1) + ' meses',
     ok: mesesEmergencia >= 6,
     warn: mesesEmergencia >= 3,
-    desc: fmt(liquidez) + ' en cuentas',
+    desc: fmt(liquidez) + ' de liquidez total (Cuenta BK: banco + efectivo, se actualiza sola)',
     target: 'Objetivo: ≥6 meses'
   });
 
