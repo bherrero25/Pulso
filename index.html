@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-1</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-2</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-1';
+const PULSO_VERSION = '26.09.16-2';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -7200,21 +7200,30 @@ function renderSemaforo() {
   const pctMes   = diaHoy / diasMes;
   const ratio    = ingresos > 0 ? gastos / ingresos : 1;
   let catAlerts  = 0;
+  const catsPasadas = [];
   Object.keys(budgets).forEach(cat => {
     if (!(budgets[cat] > 0)) return; // las de presupuesto 0 no cuentan como "pasadas" (misma regla que Análisis)
     const real = txMes.filter(t=>t.cat===cat&&t.tipo==='Gasto').reduce((a,b)=>a+b.importe,0);
-    if (real > budgets[cat]) catAlerts++;
+    if (real > budgets[cat]) { catAlerts++; catsPasadas.push(cat); }
   });
+  // El color lo decide EL AHORRO (lo que importa); las categorías son información con nombres.
+  const pctAhorro = ingresos > 0 ? Math.round((1 - ratio) * 100) : null;
+  const infoCats = catAlerts > 0
+    ? ` · Por encima de presupuesto: ${catsPasadas.slice(0,3).join(', ')}${catAlerts > 3 ? ` y ${catAlerts - 3} más` : ''}`
+    : '';
   let color, emoji, titulo, detalle;
-  if (ratio < 0.7 && catAlerts === 0) {
-    color = 'rgba(61,122,92,0.12)'; emoji = '🟢'; titulo = 'Mes en verde';
-    detalle = `Llevas gastado ${fmt(gastos)} de ${fmt(ingresos)} de ingresos. ¡Bien!`;
-  } else if (ratio < 0.9 && catAlerts <= 2) {
-    color = 'rgba(184,144,31,0.12)'; emoji = '🟡'; titulo = 'Mes en amarillo';
-    detalle = `Gastos al ${Math.round(ratio*100)}% de ingresos${catAlerts>0?` · ${catAlerts} categoría${catAlerts>1?'s':''} pasada${catAlerts>1?'s':''} de presupuesto`:''}`;
-  } else {
+  if (ingresos === 0 && gastos > 0) {
+    color = 'rgba(184,144,31,0.12)'; emoji = '🟡'; titulo = 'Mes sin ingresos registrados';
+    detalle = `Hay ${fmt(gastos)} de gastos pero ningún ingreso este mes — ¿falta importar el CSV?${infoCats}`;
+  } else if (ratio >= 1) {
     color = 'rgba(155,53,53,0.1)'; emoji = '🔴'; titulo = 'Mes en rojo';
-    detalle = `Gastos al ${Math.round(ratio*100)}% de ingresos${catAlerts>0?` · ${catAlerts} categoría${catAlerts>1?'s':''} pasada${catAlerts>1?'s':''} de presupuesto`:''}`;
+    detalle = `Gastas más de lo que ingresas: ${fmt(gastos)} de ${fmt(ingresos)} (ahorro ${pctAhorro}%)${infoCats}`;
+  } else if (ratio >= 0.85 || catAlerts > 5) {
+    color = 'rgba(184,144,31,0.12)'; emoji = '🟡'; titulo = 'Mes en amarillo';
+    detalle = `Ahorro del ${pctAhorro}% hasta hoy (${fmt(gastos)} de ${fmt(ingresos)})${infoCats}`;
+  } else {
+    color = 'rgba(61,122,92,0.12)'; emoji = '🟢'; titulo = 'Mes en verde';
+    detalle = `Ahorro del ${pctAhorro}% hasta hoy (${fmt(gastos)} gastados de ${fmt(ingresos)})${infoCats}`;
   }
   const ahorro = ingresos - gastos;
   el.style.background = color;
