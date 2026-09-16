@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-9</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-10</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-9';
+const PULSO_VERSION = '26.09.16-10';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4481,7 +4481,7 @@ function importCSV(input) {
       // Preguntar si reemplazar o añadir
       let modo = 'reemplazar';
       if (transactions.length > 0) {
-        const resp = confirm(`Ya tienes ${transactions.length} transacciones cargadas y el CSV trae ${newTx.length}.\n\n✅ Aceptar → REEMPLAZAR: la app se queda solo con los ${newTx.length} del CSV (borra lo que no esté en él)\n❌ Cancelar → AÑADIR (recomendado): conserva lo que tienes y suma solo lo nuevo; los repetidos se omiten solos`);
+        const resp = confirm(`Ya tienes ${transactions.length} transacciones y el CSV trae ${newTx.length}.\n\n✅ Aceptar → REEMPLAZAR: Pulso queda igual que el CSV. Es lo correcto si TODO lo llevas en Airtable/Excel (limpia también posibles duplicados).\n\n❌ Cancelar → AÑADIR: conserva lo que tienes y suma solo lo nuevo (los repetidos se omiten). Úsalo solo si tienes apuntes hechos a mano dentro de Pulso.`);
         modo = resp ? 'reemplazar' : 'añadir';
       }
 
