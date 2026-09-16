@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-7</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-8</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-7';
+const PULSO_VERSION = '26.09.16-8';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -4624,7 +4624,7 @@ function renderTesoreria() {
   setTxt('teso-final', fmt(saldoFinalCuenta));
   // Fórmula visible: que siempre quede claro de dónde sale el número
   setTxt('teso-final-formula',
-    `= ${fmt(saldoInicial)} inicial (ya incluye tu efectivo) + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${txs.some(esTraspaso) ? ' \u00b7 traspasos ignorados' : ''}` + ` · composición: ~${fmt(Math.max(0, saldoFinalCuenta - saldoEfectivo))} banco + ~${fmt(saldoEfectivo)} monedero` + `${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
+    `= ${fmt(saldoInicial)} inicial (ya incluye tu efectivo) + ${fmt(ingresosReales)} ingresos − ${fmt(gastosReales)} gastos (banco, tarjeta y efectivo)${txs.some(esTraspaso) ? ' \u00b7 traspasos ignorados' : ''}` + ` · de ese total, ~${fmt(saldoEfectivo)} está en tu monedero y el resto (~${fmt(Math.max(0, saldoFinalCuenta - saldoEfectivo))}) en el banco` + `${cuotasAhorroMes > 0 ? ` · si apartas el ahorro previsto (${fmt(cuotasAhorroMes)}), te quedarían ${fmt(saldoFinalCuenta - cuotasAhorroMes)}` : ''}`);
   const finalEl = document.getElementById('teso-final');
   if (finalEl) finalEl.style.color = saldoFinalCuenta >= 0 ? 'var(--green)' : 'var(--red)';
   setTxt('teso-ing-count', txs.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).length + ' entradas (banco y efectivo)');
