@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.16-10</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.18-1</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2906,7 +2906,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.16-10';
+const PULSO_VERSION = '26.09.18-1';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3559,6 +3559,26 @@ function cargarLocalYRender() {
   if (typeof tareasRender === 'function') setTimeout(tareasRender, 300);
 }
 
+// RED DE SEGURIDAD: quita duplicados EXACTOS de transacciones (misma fecha, descripción,
+// tipo e importe). Se ejecuta sola al cargar y al importar, así la app nunca muestra
+// un movimiento repetido, pulses el botón que pulses. Devuelve cuántos quitó.
+function dedupTransacciones() {
+  const visto = new Set();
+  const limpio = [];
+  let quitados = 0;
+  for (const t of (transactions || [])) {
+    const k = `${t.fecha}|${(t.desc || '').trim().toLowerCase()}|${t.tipo}|${t.importe}`;
+    if (visto.has(k)) { quitados++; continue; }
+    visto.add(k);
+    limpio.push(t);
+  }
+  if (quitados > 0) {
+    transactions = limpio;
+    try { localStorage.setItem('wl_tx', JSON.stringify(transactions)); } catch(e) {}
+  }
+  return quitados;
+}
+
 async function cargarTodoTrasLogin() {
   _datosCargados = true;
 
@@ -3633,15 +3653,20 @@ async function cargarTodoTrasLogin() {
     gastosEfectivoLocal = efectivoDesdeNube.gastos || [];
     localStorage.setItem('wl_retiradas_efectivo', JSON.stringify(retiradaEfectivo));
     localStorage.setItem('wl_gastos_efectivo_local', JSON.stringify(gastosEfectivoLocal));
-  }
-
-
-
+  }  // Auto-limpieza al arrancar: si la nube traía duplicados, se quitan y se re-guardan limpios
+  const _dupCargar = dedupTransacciones();
   populateMonthFilters();
   renderAll();
   initLeasing();
-  _unsavedChanges = false;
   _appLista = true;
+  if (_dupCargar > 0) {
+    mostrarEstadoSync(`🧹 ${_dupCargar} duplicado${_dupCargar>1?'s':''} eliminado${_dupCargar>1?'s':''} automáticamente`);
+    _unsavedChanges = true;
+    _mirrorDeletePendiente = true; // deja la nube exactamente igual que lo limpio
+    setTimeout(() => { guardarEnNube(); }, 1500);
+  } else {
+    _unsavedChanges = false;
+  }
   // Tras el login: cargar tareas de la nube y fusionar con lo local
   setTimeout(function(){
     if (typeof tareasSyncDesdeNube === 'function') tareasSyncDesdeNube();
@@ -4497,6 +4522,7 @@ function importCSV(input) {
         transactions = [...transactions, ...nuevosSinDuplicar];
       }
 
+      dedupTransacciones(); // red de seguridad: nunca dejar duplicados tras importar
       saveAll();
       populateMonthFilters();
       renderAll();
