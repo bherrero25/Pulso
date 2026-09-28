@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-1</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-2</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2951,7 +2951,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.28-1';
+const PULSO_VERSION = '26.09.28-2';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3981,9 +3981,9 @@ function renderPagosFijos() {
   if (resumen) {
     if (items.length === 0) { resumen.innerHTML = ''; }
     else if (pendientes.length === 0) {
-      resumen.innerHTML = `<div style="background:rgba(61,122,92,0.12);border:1px solid rgba(61,122,92,0.3);border-radius:10px;padding:14px 18px;font-size:14px">✅ <strong>Todo pagado este mes</strong> — ${fmt(total)} en ${items.length} pagos fijos.</div>`;
+      resumen.innerHTML = `<div style="background:rgba(61,122,92,0.12);border:1px solid rgba(61,122,92,0.3);border-radius:10px;padding:14px 18px;font-size:14px">✅ <strong>Todo pagado este mes</strong> — ${fmt2(total)} en ${items.length} pagos fijos.</div>`;
     } else {
-      resumen.innerHTML = `<div style="background:rgba(184,144,31,0.12);border:1px solid rgba(184,144,31,0.35);border-radius:10px;padding:14px 18px;font-size:14px">🔔 Te quedan <strong>${pendientes.length} pago${pendientes.length>1?'s':''} por hacer</strong> este mes · <strong>${fmt(pendTotal)}</strong> de ${fmt(total)} total.</div>`;
+      resumen.innerHTML = `<div style="background:rgba(184,144,31,0.12);border:1px solid rgba(184,144,31,0.35);border-radius:10px;padding:14px 18px;font-size:14px">🔔 Te quedan <strong>${pendientes.length} pago${pendientes.length>1?'s':''} por hacer</strong> este mes · <strong>${fmt2(pendTotal)}</strong> de ${fmt2(total)} total.</div>`;
     }
   }
   if (items.length === 0) {
@@ -4001,13 +4001,13 @@ function renderPagosFijos() {
         <div style="font-size:14px;font-weight:600;${hecho?'text-decoration:line-through':''}">${p.concepto}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">Día ${p.dia} · <span style="padding:1px 7px;border-radius:10px;font-size:10px;${metodoBadge}">${p.metodo}</span>${p.destino?` · ${p.destino}`:''}${p.notas?` · ${p.notas}`:''}</div>
       </div>
-      <div style="font-family:var(--font-mono);font-size:15px;font-weight:500;white-space:nowrap">${fmt(p.importe)}</div>
+      <div style="font-family:var(--font-mono);font-size:15px;font-weight:500;white-space:nowrap">${fmt2(p.importe)}</div>
       <div style="display:flex;gap:4px">
         <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openPagoFijoModal('${p.id}')">✏️</button>
         <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deletePagoFijo('${p.id}')">🗑</button>
       </div>
     </div>`;
-  }).join('') + `<div style="display:flex;justify-content:space-between;padding:14px 18px;font-weight:700;font-size:15px"><span>Total mensual</span><span style="font-family:var(--font-mono)">${fmt(total)}</span></div>`;
+  }).join('') + `<div style="display:flex;justify-content:space-between;padding:14px 18px;font-weight:700;font-size:15px"><span>Total mensual</span><span style="font-family:var(--font-mono)">${fmt2(total)}</span></div>`;
 }
 
 
@@ -5556,6 +5556,10 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 function fmt(n) {
   return new Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR', minimumFractionDigits:0, maximumFractionDigits:0}).format(n||0);
+}
+// Con céntimos (para importes exactos como los pagos fijos)
+function fmt2(n) {
+  return new Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2}).format(n||0);
 }
 
 
