@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-2</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-3</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -1719,6 +1719,16 @@
         </div>
         <div class="form-group"><label class="form-label">Notas</label>
           <input type="text" class="form-input" id="pf-notas" placeholder="Opcional"></div>
+        <div style="border-top:1px solid var(--border);margin:6px 0 12px;padding-top:12px">
+          <label class="form-label">Plan de pagos (opcional)</label>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Déjalo vacío si es un pago de todos los meses. Rellénalo si solo se paga durante una temporada (ej: universidad de septiembre a junio).</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" style="font-size:11px">Desde el mes</label>
+              <input type="month" class="form-input" id="pf-desde"></div>
+            <div class="form-group"><label class="form-label" style="font-size:11px">Hasta el mes</label>
+              <input type="month" class="form-input" id="pf-hasta"></div>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="closeModal('modalPagoFijo')">Cancelar</button>
@@ -2951,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.28-2';
+const PULSO_VERSION = '26.09.28-3';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3920,12 +3930,30 @@ function openPagoFijoModal(id) {
     document.getElementById('pf-metodo').value = p.metodo || 'Transferencia';
     document.getElementById('pf-destino').value = p.destino || '';
     document.getElementById('pf-notas').value = p.notas || '';
+    document.getElementById('pf-desde').value = p.desde || '';
+    document.getElementById('pf-hasta').value = p.hasta || '';
   } else {
     document.getElementById('modalPagoFijoTitle').textContent = 'Nuevo pago fijo';
-    ['pf-concepto','pf-importe','pf-dia','pf-destino','pf-notas'].forEach(i => document.getElementById(i).value = '');
+    ['pf-concepto','pf-importe','pf-dia','pf-destino','pf-notas','pf-desde','pf-hasta'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('pf-metodo').value = 'Transferencia';
   }
   openModal('modalPagoFijo');
+}
+
+// ¿está activo un pago este mes? Sin plan = siempre; con plan = dentro del rango desde–hasta
+function _pagoActivoEn(p, mes) {
+  if (!p.desde && !p.hasta) return true;
+  if (p.desde && mes < p.desde) return false;
+  if (p.hasta && mes > p.hasta) return false;
+  return true;
+}
+// Texto del plan para mostrar
+function _pagoPlanTexto(p) {
+  if (!p.desde && !p.hasta) return '';
+  const fmtM = m => { if(!m) return ''; const [y,mm]=m.split('-'); const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return M[parseInt(mm)-1]+' '+y; };
+  if (p.desde && p.hasta) return `plan: ${fmtM(p.desde)} → ${fmtM(p.hasta)}`;
+  if (p.desde) return `desde ${fmtM(p.desde)}`;
+  return `hasta ${fmtM(p.hasta)}`;
 }
 
 function savePagoFijo() {
@@ -3938,6 +3966,8 @@ function savePagoFijo() {
     metodo: document.getElementById('pf-metodo').value,
     destino: document.getElementById('pf-destino').value.trim(),
     notas: document.getElementById('pf-notas').value.trim(),
+    desde: document.getElementById('pf-desde').value || '',  // plan de pagos: mes inicio (YYYY-MM) o vacío
+    hasta: document.getElementById('pf-hasta').value || '',  // mes fin o vacío
     pagadoEn: id ? (pagosFijos.find(x => String(x.id) === String(id)) || {}).pagadoEn || '' : ''
   };
   if (!p.concepto) { alert('Pon un concepto.'); return; }
@@ -3973,33 +4003,37 @@ function renderPagosFijos() {
   const resumen = document.getElementById('pagos-resumen');
   if (!cont) return;
   const mes = _mesActualPF();
-  const items = [...pagosFijos].sort((a,b) => (a.dia||0) - (b.dia||0));
+  const todos = [...pagosFijos].sort((a,b) => (a.dia||0) - (b.dia||0));
+  const items = todos.filter(p => _pagoActivoEn(p, mes));        // activos este mes (cuentan)
+  const fueraTemporada = todos.filter(p => !_pagoActivoEn(p, mes)); // estacionales que no tocan este mes
   const total = items.reduce((s,p) => s + (p.importe||0), 0);
   const pendientes = items.filter(p => p.pagadoEn !== mes);
   const pendTotal = pendientes.reduce((s,p) => s + (p.importe||0), 0);
 
   if (resumen) {
-    if (items.length === 0) { resumen.innerHTML = ''; }
+    if (todos.length === 0) { resumen.innerHTML = ''; }
+    else if (items.length === 0) {
+      resumen.innerHTML = `<div style="background:var(--surface2);border-radius:10px;padding:14px 18px;font-size:14px">Este mes no toca ningún pago fijo (los que tienes son estacionales fuera de temporada).</div>`;
+    }
     else if (pendientes.length === 0) {
       resumen.innerHTML = `<div style="background:rgba(61,122,92,0.12);border:1px solid rgba(61,122,92,0.3);border-radius:10px;padding:14px 18px;font-size:14px">✅ <strong>Todo pagado este mes</strong> — ${fmt2(total)} en ${items.length} pagos fijos.</div>`;
     } else {
       resumen.innerHTML = `<div style="background:rgba(184,144,31,0.12);border:1px solid rgba(184,144,31,0.35);border-radius:10px;padding:14px 18px;font-size:14px">🔔 Te quedan <strong>${pendientes.length} pago${pendientes.length>1?'s':''} por hacer</strong> este mes · <strong>${fmt2(pendTotal)}</strong> de ${fmt2(total)} total.</div>`;
     }
   }
-  if (items.length === 0) {
+  if (todos.length === 0) {
     cont.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div>Sin pagos fijos todavía. Pulsa "+ Nuevo pago fijo".</div>';
     return;
   }
-  cont.innerHTML = items.map(p => {
-    const hecho = p.pagadoEn === mes;
+  const filaPago = (p, atenuado) => {
+    const hecho = p.pagadoEn === mes && !atenuado;
     const metodoBadge = p.metodo === 'Bizum' ? 'background:rgba(55,138,221,0.12);color:#3d5a8a' : p.metodo === 'Transferencia' ? 'background:rgba(184,144,31,0.12);color:#8b6914' : 'background:var(--surface2);color:var(--muted)';
-    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);${hecho?'opacity:0.55':''}">
-      <div onclick="togglePagoFijoHecho('${p.id}')" title="Marcar como hecho este mes" style="width:22px;height:22px;border-radius:50%;border:2px solid ${hecho?'var(--green)':'var(--border)'};background:${hecho?'var(--green)':'transparent'};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center">
-        ${hecho?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
-      </div>
+    const plan = _pagoPlanTexto(p);
+    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);${hecho||atenuado?'opacity:0.5':''}">
+      ${atenuado ? '<div style="width:22px;height:22px;flex-shrink:0"></div>' : `<div onclick="togglePagoFijoHecho('${p.id}')" title="Marcar como hecho este mes" style="width:22px;height:22px;border-radius:50%;border:2px solid ${hecho?'var(--green)':'var(--border)'};background:${hecho?'var(--green)':'transparent'};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center">${hecho?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div>`}
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:600;${hecho?'text-decoration:line-through':''}">${p.concepto}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Día ${p.dia} · <span style="padding:1px 7px;border-radius:10px;font-size:10px;${metodoBadge}">${p.metodo}</span>${p.destino?` · ${p.destino}`:''}${p.notas?` · ${p.notas}`:''}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Día ${p.dia} · <span style="padding:1px 7px;border-radius:10px;font-size:10px;${metodoBadge}">${p.metodo}</span>${p.destino?` · ${p.destino}`:''}${plan?` · <span style="color:var(--accent)">📅 ${plan}</span>`:''}${p.notas?` · ${p.notas}`:''}</div>
       </div>
       <div style="font-family:var(--font-mono);font-size:15px;font-weight:500;white-space:nowrap">${fmt2(p.importe)}</div>
       <div style="display:flex;gap:4px">
@@ -4007,7 +4041,14 @@ function renderPagosFijos() {
         <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deletePagoFijo('${p.id}')">🗑</button>
       </div>
     </div>`;
-  }).join('') + `<div style="display:flex;justify-content:space-between;padding:14px 18px;font-weight:700;font-size:15px"><span>Total mensual</span><span style="font-family:var(--font-mono)">${fmt2(total)}</span></div>`;
+  };
+  let html = items.map(p => filaPago(p, false)).join('');
+  html += `<div style="display:flex;justify-content:space-between;padding:14px 18px;font-weight:700;font-size:15px"><span>Total este mes</span><span style="font-family:var(--font-mono)">${fmt2(total)}</span></div>`;
+  if (fueraTemporada.length > 0) {
+    html += `<div style="padding:16px 18px 8px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Estacionales — este mes no toca</div>`;
+    html += fueraTemporada.map(p => filaPago(p, true)).join('');
+  }
+  cont.innerHTML = html;
 }
 
 
