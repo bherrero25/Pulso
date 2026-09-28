@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.18-1</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-1</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -843,6 +843,7 @@
   <button class="tab" onclick="switchTab(&#39;viajes&#39;, this)">✈ Viajes</button>
   <button class="tab" onclick="switchTab(&#39;gastos_extra&#39;, this)">📅 Extras</button>
   <button class="tab" onclick="switchTab(&#39;cierre&#39;, this)">📊 Cierre mes</button>
+  <button class="tab" onclick="switchTab(&#39;pagos&#39;, this)">💸 Pagos fijos</button>
   <button class="tab" onclick="mostrarInformeAnual()">📚 Informe año</button>
   <button class="tab" onclick="switchTab(&#39;agenda&#39;, this)">🗓 Agenda</button>
   <button class="tab" onclick="switchTab(&#39;bonus&#39;, this)">🎯 Bonus</button>
@@ -1679,6 +1680,50 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Histórico de cierres guardados</div></div>
       <div class="card-body" style="padding:0"><div id="cierre-historico"><div class="empty-state" style="padding:20px"><div class="empty-icon">📊</div>Pulsa "Guardar cierre" al final de cada mes</div></div></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGOS FIJOS ===== -->
+  <div class="tab-content" id="tab-pagos">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-family:var(--font-display);font-size:28px;font-weight:600">Pagos fijos del mes</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Transferencias y bizums que haces cada mes · marca los que ya has hecho</div>
+      </div>
+      <button class="btn btn-gold" onclick="openPagoFijoModal()">+ Nuevo pago fijo</button>
+    </div>
+    <div id="pagos-resumen" style="margin-bottom:18px"></div>
+    <div class="card"><div class="card-body" id="pagos-lista" style="padding:0"></div></div>
+  </div>
+
+  <!-- Modal pago fijo -->
+  <div class="modal-overlay" id="modalPagoFijo">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="modalPagoFijoTitle">Nuevo pago fijo</div>
+        <button class="modal-close" onclick="closeModal('modalPagoFijo')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="pf-edit-id">
+        <div class="form-group"><label class="form-label">Concepto</label>
+          <input type="text" class="form-input" id="pf-concepto" placeholder="Ej: Hipoteca, Mensualidad Dani..."></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Importe (€)</label>
+            <input type="number" step="0.01" class="form-input" id="pf-importe" placeholder="0"></div>
+          <div class="form-group"><label class="form-label">Día del mes</label>
+            <input type="number" min="1" max="31" class="form-input" id="pf-dia" placeholder="1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Método</label>
+            <select class="form-input" id="pf-metodo"><option>Transferencia</option><option>Bizum</option><option>Domiciliación</option><option>Otro</option></select></div>
+          <div class="form-group"><label class="form-label">A quién / cuenta</label>
+            <input type="text" class="form-input" id="pf-destino" placeholder="Ej: Nicolás, banco..."></div>
+        </div>
+        <div class="form-group"><label class="form-label">Notas</label>
+          <input type="text" class="form-input" id="pf-notas" placeholder="Opcional"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modalPagoFijo')">Cancelar</button>
+        <button class="btn btn-gold" onclick="savePagoFijo()">Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -2906,7 +2951,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.18-1';
+const PULSO_VERSION = '26.09.28-1';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3285,6 +3330,7 @@ let seguros = [];
 let viajes = [];
 let gastosExtra = [];
 let hijosConfig = null;
+let pagosFijos = [];  // pagos fijos mensuales (transferencias/bizums)
 
 // Control de cambios sin guardar
 let _unsavedChanges = false;
@@ -3653,7 +3699,16 @@ async function cargarTodoTrasLogin() {
     gastosEfectivoLocal = efectivoDesdeNube.gastos || [];
     localStorage.setItem('wl_retiradas_efectivo', JSON.stringify(retiradaEfectivo));
     localStorage.setItem('wl_gastos_efectivo_local', JSON.stringify(gastosEfectivoLocal));
-  }  // Auto-limpieza al arrancar: si la nube traía duplicados, se quitan y se re-guardan limpios
+  }  // Cargar pagos fijos desde pulso_config key=pagos_fijos
+  const pagosFijosDesdeNube = await sbPagosFijosCargar();
+  if (pagosFijosDesdeNube) {
+    pagosFijos = pagosFijosDesdeNube;
+    localStorage.setItem('wl_pagos_fijos', JSON.stringify(pagosFijos));
+  } else {
+    try { pagosFijos = JSON.parse(localStorage.getItem('wl_pagos_fijos') || '[]'); } catch(e) { pagosFijos = []; }
+  }
+
+  // Auto-limpieza al arrancar: si la nube traía duplicados, se quitan y se re-guardan limpios
   const _dupCargar = dedupTransacciones();
   populateMonthFilters();
   renderAll();
@@ -3824,7 +3879,140 @@ function getFilteredTx(filter) {
 }
 
 // ===== RENDER ALL =====
+// ===== PAGOS FIJOS MENSUALES =====
+async function sbPagosFijosSync() {
+  try {
+    const H = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}`, 'Content-Type': 'application/json' };
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.pagos_fijos`, {
+      method: 'PATCH', headers: { ...H, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ data: { items: pagosFijos }, updated_at: new Date().toISOString() })
+    });
+    if (!r.ok) { avisarErrorSync('pagos fijos'); return; }
+    const rows = await r.json();
+    if (!rows || rows.length === 0) {
+      const r2 = await fetch(`${SB_URL}/rest/v1/pulso_config`, { method: 'POST', headers: H,
+        body: JSON.stringify({ user_id: SB_USER, key: 'pagos_fijos', data: { items: pagosFijos } }) });
+      if (!r2.ok) avisarErrorSync('pagos fijos');
+    }
+  } catch(e) { console.warn('sbPagosFijosSync error:', e); avisarErrorSync('pagos fijos'); }
+}
+async function sbPagosFijosCargar() {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_config?user_id=eq.${SB_USER}&key=eq.pagos_fijos&select=data`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` } });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return (rows && rows.length && rows[0].data && rows[0].data.items) ? rows[0].data.items : null;
+  } catch(e) { return null; }
+}
+
+function _mesActualPF() { return new Date().toISOString().substring(0,7); }
+
+function openPagoFijoModal(id) {
+  document.getElementById('pf-edit-id').value = id || '';
+  if (id) {
+    const p = pagosFijos.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById('modalPagoFijoTitle').textContent = 'Editar pago fijo';
+    document.getElementById('pf-concepto').value = p.concepto || '';
+    document.getElementById('pf-importe').value = p.importe || '';
+    document.getElementById('pf-dia').value = p.dia || '';
+    document.getElementById('pf-metodo').value = p.metodo || 'Transferencia';
+    document.getElementById('pf-destino').value = p.destino || '';
+    document.getElementById('pf-notas').value = p.notas || '';
+  } else {
+    document.getElementById('modalPagoFijoTitle').textContent = 'Nuevo pago fijo';
+    ['pf-concepto','pf-importe','pf-dia','pf-destino','pf-notas'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('pf-metodo').value = 'Transferencia';
+  }
+  openModal('modalPagoFijo');
+}
+
+function savePagoFijo() {
+  const id = document.getElementById('pf-edit-id').value;
+  const p = {
+    id: id || String(Date.now()),
+    concepto: document.getElementById('pf-concepto').value.trim(),
+    importe: parseFloat(document.getElementById('pf-importe').value) || 0,
+    dia: parseInt(document.getElementById('pf-dia').value) || 1,
+    metodo: document.getElementById('pf-metodo').value,
+    destino: document.getElementById('pf-destino').value.trim(),
+    notas: document.getElementById('pf-notas').value.trim(),
+    pagadoEn: id ? (pagosFijos.find(x => String(x.id) === String(id)) || {}).pagadoEn || '' : ''
+  };
+  if (!p.concepto) { alert('Pon un concepto.'); return; }
+  if (id) pagosFijos = pagosFijos.map(x => String(x.id) === String(id) ? p : x);
+  else pagosFijos.push(p);
+  localStorage.setItem('wl_pagos_fijos', JSON.stringify(pagosFijos));
+  sbPagosFijosSync();
+  closeModal('modalPagoFijo');
+  renderPagosFijos();
+}
+
+function deletePagoFijo(id) {
+  const p = pagosFijos.find(x => String(x.id) === String(id));
+  if (!p || !confirm(`¿Eliminar el pago fijo "${p.concepto}"?`)) return;
+  pagosFijos = pagosFijos.filter(x => String(x.id) !== String(id));
+  localStorage.setItem('wl_pagos_fijos', JSON.stringify(pagosFijos));
+  sbPagosFijosSync();
+  renderPagosFijos();
+}
+
+function togglePagoFijoHecho(id) {
+  const p = pagosFijos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const mes = _mesActualPF();
+  p.pagadoEn = (p.pagadoEn === mes) ? '' : mes;  // marcar/desmarcar para el mes actual
+  localStorage.setItem('wl_pagos_fijos', JSON.stringify(pagosFijos));
+  sbPagosFijosSync();
+  renderPagosFijos();
+}
+
+function renderPagosFijos() {
+  const cont = document.getElementById('pagos-lista');
+  const resumen = document.getElementById('pagos-resumen');
+  if (!cont) return;
+  const mes = _mesActualPF();
+  const items = [...pagosFijos].sort((a,b) => (a.dia||0) - (b.dia||0));
+  const total = items.reduce((s,p) => s + (p.importe||0), 0);
+  const pendientes = items.filter(p => p.pagadoEn !== mes);
+  const pendTotal = pendientes.reduce((s,p) => s + (p.importe||0), 0);
+
+  if (resumen) {
+    if (items.length === 0) { resumen.innerHTML = ''; }
+    else if (pendientes.length === 0) {
+      resumen.innerHTML = `<div style="background:rgba(61,122,92,0.12);border:1px solid rgba(61,122,92,0.3);border-radius:10px;padding:14px 18px;font-size:14px">✅ <strong>Todo pagado este mes</strong> — ${fmt(total)} en ${items.length} pagos fijos.</div>`;
+    } else {
+      resumen.innerHTML = `<div style="background:rgba(184,144,31,0.12);border:1px solid rgba(184,144,31,0.35);border-radius:10px;padding:14px 18px;font-size:14px">🔔 Te quedan <strong>${pendientes.length} pago${pendientes.length>1?'s':''} por hacer</strong> este mes · <strong>${fmt(pendTotal)}</strong> de ${fmt(total)} total.</div>`;
+    }
+  }
+  if (items.length === 0) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div>Sin pagos fijos todavía. Pulsa "+ Nuevo pago fijo".</div>';
+    return;
+  }
+  cont.innerHTML = items.map(p => {
+    const hecho = p.pagadoEn === mes;
+    const metodoBadge = p.metodo === 'Bizum' ? 'background:rgba(55,138,221,0.12);color:#3d5a8a' : p.metodo === 'Transferencia' ? 'background:rgba(184,144,31,0.12);color:#8b6914' : 'background:var(--surface2);color:var(--muted)';
+    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);${hecho?'opacity:0.55':''}">
+      <div onclick="togglePagoFijoHecho('${p.id}')" title="Marcar como hecho este mes" style="width:22px;height:22px;border-radius:50%;border:2px solid ${hecho?'var(--green)':'var(--border)'};background:${hecho?'var(--green)':'transparent'};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        ${hecho?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;${hecho?'text-decoration:line-through':''}">${p.concepto}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Día ${p.dia} · <span style="padding:1px 7px;border-radius:10px;font-size:10px;${metodoBadge}">${p.metodo}</span>${p.destino?` · ${p.destino}`:''}${p.notas?` · ${p.notas}`:''}</div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:15px;font-weight:500;white-space:nowrap">${fmt(p.importe)}</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openPagoFijoModal('${p.id}')">✏️</button>
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;border-color:var(--red);color:var(--red)" onclick="deletePagoFijo('${p.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('') + `<div style="display:flex;justify-content:space-between;padding:14px 18px;font-weight:700;font-size:15px"><span>Total mensual</span><span style="font-family:var(--font-mono)">${fmt(total)}</span></div>`;
+}
+
+
 function renderAll() {
+  try { renderPagosFijos(); } catch(e) {}
   renderKPIs();
   renderProyeccion();
   renderChart();
@@ -9312,6 +9500,7 @@ function mostrarInformeAnual(anio) {
   <button class="mobile-more-item" onclick="switchTabMobile('viajes')"><span class="mobile-more-item-icon">✈</span> Viajes</button>
   <button class="mobile-more-item" onclick="switchTabMobile('gastos_extra')"><span class="mobile-more-item-icon">📅</span> Extras</button>
   <button class="mobile-more-item" onclick="switchTabMobile('cierre')"><span class="mobile-more-item-icon">📊</span> Cierre mes</button>
+  <button class="mobile-more-item" onclick="switchTabMobile('pagos')"><span class="mobile-more-item-icon">💸</span> Pagos fijos</button>
   <button class="mobile-more-item" onclick="closeMobileMore(); mostrarInformeAnual()"><span class="mobile-more-item-icon">📚</span> Informe del año</button>
   <button class="mobile-more-item" onclick="switchTabMobile('agenda')"><span class="mobile-more-item-icon">🗓</span> Agenda</button>
   <button class="mobile-more-item" onclick="switchTabMobile('bonus')"><span class="mobile-more-item-icon">🎁</span> Bonus</button>
