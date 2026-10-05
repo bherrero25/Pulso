@@ -2961,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.10.05-1';
+const PULSO_VERSION = '26.10.05-2';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3184,12 +3184,22 @@ async function sbDelete(tabla, filtro) {
 // Así, una pestaña abierta con datos antiguos ya no puede pisar lo importado en otro dispositivo.
 let _mirrorDeletePendiente = false;
 
+// CORTAFUEGOS ANTI-PISADO MULTI-DISPOSITIVO:
+// _txDirty = este dispositivo ha tocado las transacciones en esta sesión (importar/añadir/
+// editar/borrar/limpiar duplicados). Solo si está activo volvemos a subir la tabla entera de
+// movimientos. Un dispositivo que solo mira (o que solo cambió otra cosa, p.ej. un pago fijo)
+// NO re-sube su lista antigua de movimientos, así que ya no puede "resucitar" un gasto que otro
+// dispositivo había borrado ni duplicar nada.
+let _txDirty = false;
+
 async function guardarEnNube() {
   mostrarEstadoSync('⏳ Guardando...');
   try {
     // 1) Insertar/actualizar TODO primero, sin borrar nada. Si un lote falla, se aborta
     //    y la nube conserva lo que tenía (nunca puede quedar vacía a medias).
-    if (transactions.length > 0) {
+    //    SOLO si este dispositivo ha tocado los movimientos (_txDirty): un dispositivo que no
+    //    los ha cambiado no re-sube su lista (que podría estar rancia) y así no resucita ni duplica.
+    if (_txDirty && transactions.length > 0) {
       const rows = transactions.map(t => ({
         id: t.id,
         user_id: SB_USER,
@@ -3224,6 +3234,23 @@ async function guardarEnNube() {
       _mirrorDeletePendiente = false;
     }
 
+    // CORTAFUEGOS ANTI-PISADO de los saldos iniciales: antes de guardar la config, leemos la de
+    // la nube y conservamos cualquier saldo mensual que ella haya metido en OTRO dispositivo y que
+    // este no tenga. Así una copia antigua ya no puede borrar el saldo inicial de un mes. Solo
+    // AÑADE los meses que falten; nunca pisa ni borra los que este dispositivo ya tiene.
+    try {
+      const rCfgN = await fetch(`${SB_URL}/rest/v1/config?user_id=eq.${SB_USER}&select=data`, {
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
+      });
+      if (rCfgN.ok) {
+        const arrN = await rCfgN.json();
+        const saldosNube = (arrN[0] && arrN[0].data && arrN[0].data.saldosIniciales) || {};
+        for (const mes in saldosNube) {
+          if (!(mes in saldosIniciales)) saldosIniciales[mes] = saldosNube[mes];
+        }
+      }
+    } catch(e) { /* si falla la lectura, seguimos con lo local */ }
+
     // Guardar config (todo lo demás) en una sola fila JSON
     const configData = {
       id: `config_${SB_USER}`,
@@ -3245,6 +3272,7 @@ async function guardarEnNube() {
 
     mostrarEstadoSync('☁️ Guardado');
     _unsavedChanges = false;
+    _txDirty = false; // ya subido lo que este dispositivo cambió en los movimientos
     const btn = document.getElementById('btn-guardar');
     if (btn) { btn.style.background = 'var(--green)'; btn.style.color = '#fff'; btn.textContent = '☁️ Guardado'; }
   } catch(e) {
@@ -3631,6 +3659,7 @@ function dedupTransacciones() {
   }
   if (quitados > 0) {
     transactions = limpio;
+    _txDirty = true; // hemos limpiado duplicados: hay que reflejarlo en la nube
     try { localStorage.setItem('wl_tx', JSON.stringify(transactions)); } catch(e) {}
   }
   return quitados;
@@ -3763,6 +3792,8 @@ function resetAllData() {
   } else {
     alert('Opción no válida.'); return;
   }
+  // Un borrado deliberado SÍ debe reflejarse en la nube (vaciar la tabla también allí).
+  _txDirty = true; _mirrorDeletePendiente = true;
   saveAll();
   populateMonthFilters();
   renderAll();
@@ -4601,6 +4632,7 @@ function addTransaction() {
   if (!fecha || !desc || !importe) return alert('Rellena todos los campos obligatorios.');
   const id = Date.now();
   transactions.push({id, fecha, desc, tipo, importe, cat, cuenta});
+  _txDirty = true;
   saveAll();
   closeModal('modalTx');
   populateMonthFilters();
@@ -4612,6 +4644,7 @@ function addTransaction() {
 
 function deleteTx(id) {
   transactions = transactions.filter(t => t.id !== id);
+  _txDirty = true;
   sbDelete('transactions', `user_id=eq.${SB_USER}&id=eq.${id}`); // borrado individual inmediato en la nube
   saveAll();
   renderAll();
@@ -4735,24 +4768,19 @@ function importCSV(input) {
         newTx.push({ id: Date.now() + i, fecha, desc, tipo, importe, cat, cuenta });
       }
 
-      // Preguntar si reemplazar o añadir
-      let modo = 'reemplazar';
-      if (transactions.length > 0) {
-        const resp = confirm(`Ya tienes ${transactions.length} transacciones y el CSV trae ${newTx.length}.\n\n✅ Aceptar → REEMPLAZAR: Pulso queda igual que el CSV. Es lo correcto si TODO lo llevas en Airtable/Excel (limpia también posibles duplicados).\n\n❌ Cancelar → AÑADIR: conserva lo que tienes y suma solo lo nuevo (los repetidos se omiten). Úsalo solo si tienes apuntes hechos a mano dentro de Pulso.`);
-        modo = resp ? 'reemplazar' : 'añadir';
-      }
-
+      // Importación SIEMPRE en modo REEMPLAZAR: Pulso queda idéntico al CSV de Airtable.
+      // Betsabé lleva TODO el histórico en Airtable y no apunta a mano dentro de Pulso, así que
+      // reemplazar es lo correcto y elimina de raíz los duplicados (incluso los de fecha cambiada,
+      // que el modo "Añadir" no sabía detectar porque veía otra fecha y los metía otra vez).
+      const modo = 'reemplazar';
       let duplicadosOmitidos = 0;
-      if (modo === 'reemplazar') {
-        transactions = newTx;
-        _mirrorDeletePendiente = true; // el próximo guardado eliminará de la nube lo que no esté en el CSV
-      } else {
-        // Añadir sin duplicar: se saltan los movimientos que ya existen (misma fecha+descripción+tipo+importe)
-        const existentes = new Set(transactions.map(t => `${t.fecha}|${t.desc}|${t.tipo}|${t.importe}`));
-        const nuevosSinDuplicar = newTx.filter(t => !existentes.has(`${t.fecha}|${t.desc}|${t.tipo}|${t.importe}`));
-        duplicadosOmitidos = newTx.length - nuevosSinDuplicar.length;
-        transactions = [...transactions, ...nuevosSinDuplicar];
+      if (transactions.length > 0) {
+        const ok = confirm(`Vas a REEMPLAZAR las ${transactions.length} transacciones de Pulso por las ${newTx.length} del CSV de Airtable.\n\nPulso quedará EXACTAMENTE igual que Airtable: se limpian duplicados y desaparece cualquier movimiento que ya no esté en el CSV.\n\n¿Continuar?`);
+        if (!ok) { input.value = ''; return; }
       }
+      transactions = newTx;
+      _txDirty = true;
+      _mirrorDeletePendiente = true; // el próximo guardado eliminará de la nube lo que no esté en el CSV
 
       dedupTransacciones(); // red de seguridad: nunca dejar duplicados tras importar
       saveAll();
@@ -7630,6 +7658,7 @@ function saveTransaction() {
   } else {
     transactions.push({ id: Date.now(), fecha, desc, tipo, importe, cat, cuenta });
   }
+  _txDirty = true;
   saveAll();
   closeModal('modalTx');
   document.getElementById('modalTxTitle').textContent = 'Nueva Transacción';
