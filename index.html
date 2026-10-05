@@ -2961,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.10.05-3';
+const PULSO_VERSION = '26.10.05-4';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -7727,11 +7727,9 @@ function populateCierreMesFilter() {
   const meses = [...new Set(transactions.map(t=>t.fecha.substring(0,7)))].sort().reverse();
   sel.innerHTML = meses.map(m => `<option value="${m}">${formatMonth(m)}</option>`).join('');
   if (valorActual && meses.includes(valorActual)) { sel.value = valorActual; return; }
-  // por defecto: el último mes TERMINADO que aún no tiene cierre
+  // por defecto: el MES EN CURSO si ya tiene movimientos; si no, el mes más reciente con datos.
   const mesActual = new Date().toISOString().substring(0,7);
-  const cerrados = new Set((historicoCierres || []).map(c => c.mes));
-  const pendiente = meses.find(m => m < mesActual && !cerrados.has(m));
-  sel.value = pendiente || meses.find(m => m < mesActual) || meses[0] || '';
+  sel.value = meses.includes(mesActual) ? mesActual : (meses[0] || '');
 }
 
 // ===== EFECTIVO =====
