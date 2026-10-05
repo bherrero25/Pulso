@@ -760,7 +760,7 @@
 <div id="pinScreen" class="hidden">
   <div class="pin-logo">PULSO</div>
   <div class="pin-sub">Inicia sesión para continuar</div>
-  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.09.28-3</div>
+  <div id="version-badge" style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-family:var(--font-mono)">versión 26.10.05-1</div>
   <div style="display:flex;flex-direction:column;gap:10px;width:270px">
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" value="betsabe.herrero@gmail.com"
       style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:48px;padding:0 14px;font-size:15px;color:var(--text)">
@@ -2961,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.09.28-3';
+const PULSO_VERSION = '26.10.05-1';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3409,6 +3409,7 @@ function cargarDesdeLocalStorage() {
   saldosIniciales  = JSON.parse(localStorage.getItem('wl_saldos')       || '{}');
   historicoCartera = JSON.parse(localStorage.getItem('wl_historico')    || '[]');
   seguros          = JSON.parse(localStorage.getItem('wl_seguros')      || '[]');
+  if (typeof dedupSegurosLocal === 'function') dedupSegurosLocal();
   viajes           = JSON.parse(localStorage.getItem('wl_viajes')       || '[]');
   gastosExtra      = JSON.parse(localStorage.getItem('wl_gastos_extra') || '[]');
 }
@@ -3660,11 +3661,13 @@ async function cargarTodoTrasLogin() {
     localStorage.setItem('wl_funds', JSON.stringify(funds));
   }
 
-  // Cargar seguros directamente desde tabla pulso_seguros
+  // Cargar seguros: primero limpiar duplicados de la nube (red de seguridad), luego cargar
+  const _dupSeg = await dedupSegurosNube();
   const segurosDesdeNube = await sbSegurosCargar();
-  if (segurosDesdeNube && segurosDesdeNube.length > 0) {
-    seguros = segurosDesdeNube;
+  if (segurosDesdeNube) {
+    seguros = segurosDesdeNube;   // pisa SIEMPRE lo local (aunque la nube quede vacía)
     localStorage.setItem('wl_seguros', JSON.stringify(seguros));
+    if (_dupSeg > 0) mostrarEstadoSync(`🧹 ${_dupSeg} seguro${_dupSeg>1?'s':''} duplicado${_dupSeg>1?'s':''} eliminado${_dupSeg>1?'s':''}`);
   }
 
   // Cargar viajes desde pulso_config key=viajes
@@ -6233,6 +6236,26 @@ async function sbSeguroDelete(id) {
   } catch(e) { console.warn('sbSeguroDelete error:', e); avisarErrorSync('seguros'); }
 }
 
+// RED DE SEGURIDAD seguros: elimina de la nube los seguros duplicados exactos
+// (mismo nombre + vencimiento + prima), conservando uno. Se ejecuta al cargar.
+async function dedupSegurosNube() {
+  try {
+    const h = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` };
+    const r = await fetch(`${SB_URL}/rest/v1/pulso_seguros?user_id=eq.${SB_USER}&select=id,nombre,vencimiento,prima&order=id.asc`, { headers: h });
+    if (!r.ok) return 0;
+    const rows = await r.json();
+    const visto = new Set(); const aBorrar = [];
+    rows.forEach(s => {
+      const k = `${(s.nombre||'').trim().toLowerCase()}|${s.vencimiento}|${s.prima}`;
+      if (visto.has(k)) aBorrar.push(s.id); else visto.add(k);
+    });
+    for (const id of aBorrar) {
+      await fetch(`${SB_URL}/rest/v1/pulso_seguros?id=eq.${id}&user_id=eq.${SB_USER}`, { method: 'DELETE', headers: h });
+    }
+    return aBorrar.length;
+  } catch(e) { return 0; }
+}
+
 async function sbSegurosCargar() {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/pulso_seguros?user_id=eq.${SB_USER}&order=vencimiento.asc`, {
@@ -6282,7 +6305,21 @@ function deleteSeguro(id) {
   renderSeguros();
 }
 
+// Quita duplicados EXACTOS de seguros en memoria (nombre+vencimiento+prima). Corre
+// siempre al pintar, así nunca se ve un seguro repetido aunque el guardado local esté sucio.
+function dedupSegurosLocal() {
+  const visto = new Set(); const limpio = []; let quitados = 0;
+  for (const s of (seguros || [])) {
+    const k = `${(s.nombre||'').trim().toLowerCase()}|${s.vencimiento}|${s.prima}`;
+    if (visto.has(k)) { quitados++; continue; }
+    visto.add(k); limpio.push(s);
+  }
+  if (quitados > 0) { seguros = limpio; try { localStorage.setItem('wl_seguros', JSON.stringify(seguros)); } catch(e){} }
+  return quitados;
+}
+
 function renderSeguros() {
+  dedupSegurosLocal();
   const filtroTipo = document.getElementById('seg-filtro-tipo')?.value || 'all';
   const hoy = new Date(); hoy.setHours(0,0,0,0);
   
