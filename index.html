@@ -2961,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.10.05-2';
+const PULSO_VERSION = '26.10.05-3';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -3220,18 +3220,42 @@ async function guardarEnNube() {
     //    se sincronizan uno a uno en el momento). Evita que una pestaña con datos
     //    antiguos elimine de la nube movimientos añadidos desde otro dispositivo.
     if (_mirrorDeletePendiente) {
-      const rIds = await fetch(`${SB_URL}/rest/v1/transactions?user_id=eq.${SB_USER}&select=id`, {
-        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
-      });
-      if (!rIds.ok) throw new Error('no se pudo verificar el estado de la nube');
-      const idsNube = await rIds.json();
+      // Borrado ENDURECIDO: lotes pequeños + reintentos + verificación final, en varias
+      // pasadas, para que NUNCA quede un movimiento antiguo a medias (que era lo que generaba
+      // duplicados cuando el borrado se cortaba). No se baja _mirrorDeletePendiente hasta que
+      // se confirma que no queda ninguno; si algo falla, el flag sigue activo y se reintenta en
+      // el siguiente guardado.
+      const _sleep = ms => new Promise(r => setTimeout(r, ms));
       const idsLocales = new Set(transactions.map(t => String(t.id)));
-      const sobrantes = idsNube.map(x => String(x.id)).filter(id => !idsLocales.has(id));
-      for (let i = 0; i < sobrantes.length; i += 100) {
-        const ok = await sbDelete('transactions', `user_id=eq.${SB_USER}&id=in.(${sobrantes.slice(i, i + 100).join(',')})`);
-        if (!ok) throw new Error('no se pudieron eliminar transacciones antiguas de la nube');
+      let limpio = false;
+      for (let pasada = 0; pasada < 5 && !limpio; pasada++) {
+        // Releer qué hay realmente en la nube
+        const rIds = await fetch(`${SB_URL}/rest/v1/transactions?user_id=eq.${SB_USER}&select=id&limit=10000`, {
+          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_TOKEN || SB_KEY}` }
+        });
+        if (!rIds.ok) { await _sleep(500); continue; } // reintenta la lectura en la siguiente pasada
+        const idsNube = await rIds.json();
+        const sobrantes = idsNube.map(x => String(x.id)).filter(id => !idsLocales.has(id));
+        if (sobrantes.length === 0) { limpio = true; break; }
+        // Borrar en lotes pequeños, con reintentos por lote
+        for (let i = 0; i < sobrantes.length; i += 50) {
+          const lote = sobrantes.slice(i, i + 50);
+          let ok = false;
+          for (let intento = 0; intento < 4 && !ok; intento++) {
+            ok = await sbDelete('transactions', `user_id=eq.${SB_USER}&id=in.(${lote.join(',')})`);
+            if (!ok) await _sleep(400 * (intento + 1));
+          }
+        }
+        await _sleep(300);
       }
-      _mirrorDeletePendiente = false;
+      if (limpio) {
+        _mirrorDeletePendiente = false;
+      } else {
+        // No se pudo confirmar que la nube quedara limpia: se deja el flag para reintentar en el
+        // próximo guardado y se avisa, pero NO se lanza error (lo ya subido se conserva y la red
+        // dedupTransacciones del próximo login acabará de limpiar si quedara algún repetido).
+        mostrarEstadoSync('⚠️ Limpieza incompleta, se reintentará');
+      }
     }
 
     // CORTAFUEGOS ANTI-PISADO de los saldos iniciales: antes de guardar la config, leemos la de
