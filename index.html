@@ -2961,7 +2961,7 @@ async function doLogin() {
 
 // ===== DETECTOR DE VERSIÓN NUEVA =====
 // Evita que un ordenador se quede con una versión vieja en caché sin enterarse.
-const PULSO_VERSION = '26.10.05-4';
+const PULSO_VERSION = '26.10.05-5';
 async function comprobarVersion() {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
@@ -8112,15 +8112,27 @@ function renderCierre() {
       hist.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">📊</div>Pulsa "Guardar cierre" al final de cada mes</div>';
     } else {
       hist.innerHTML = `<div style="padding:0 22px">` +
-        [...historicoCierres].reverse().map(c => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--surface2);font-size:13px;gap:8px;flex-wrap:wrap">
-            <span style="font-weight:500">${formatMonth(c.mes)}</span>
+        [...historicoCierres].reverse().map(c => {
+          // Recalcular el mes con los movimientos ACTUALES para detectar un cierre guardado desfasado
+          const txM = transactions.filter(t => t.fecha.startsWith(c.mes));
+          const ingN = txM.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+          const gasN = txM.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+          const ahoN = ingN - gasN;
+          const desfasado = Math.abs(ahoN - (c.ahorro||0)) > 0.01;
+          return `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;${desfasado?'':'border-bottom:1px solid var(--surface2);'}font-size:13px;gap:8px;flex-wrap:wrap">
+            <span style="font-weight:500">${formatMonth(c.mes)}${desfasado?' ⚠️':''}</span>
             <span style="color:var(--green);font-family:var(--font-mono)">${fmt(c.ingresos)}</span>
             <span style="color:var(--red);font-family:var(--font-mono)">${fmt(c.gastos)}</span>
             <span style="color:${c.ahorro>=0?'var(--green)':'var(--red)'};font-family:var(--font-mono);font-weight:600">${c.ahorro>=0?'+':''}${fmt(c.ahorro)}</span>
             <span style="font-size:11px;color:var(--muted)">ahorro ${c.ahorroP}%</span>
             <button onclick="deleteCierre('${c.mes}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px">✕</button>
-          </div>`).join('') + `</div>`;
+          </div>` + (desfasado ? `
+          <div style="padding:2px 0 12px;border-bottom:1px solid var(--surface2);font-size:11px;color:#b8901f;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>No coincide con el cálculo actual (ahora: ingresos ${fmt(ingN)} · gastos ${fmt(gasN)} · ahorro ${ahoN>=0?'+':''}${fmt(ahoN)}). Puede que lo guardaras antes de meter todos los movimientos del mes.</span>
+            <button onclick="actualizarCierre('${c.mes}')" style="background:#b8901f;color:#fff;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px">Actualizar</button>
+          </div>` : '');
+        }).join('') + `</div>`;
     }
   }
 }
@@ -8204,6 +8216,25 @@ function deleteCierre(mes) {
   if (!confirm(`¿Borrar el cierre de ${formatMonth(mes)}?`)) return;
   historicoCierres = historicoCierres.filter(c => c.mes !== mes);
   localStorage.setItem('wl_cierres', JSON.stringify(historicoCierres));
+  saveAll();
+  renderCierre();
+}
+
+// Reescribe un cierre guardado con los movimientos ACTUALES del mes (para cuando se guardó
+// antes de meter todo). Misma fórmula que guardarCierreMes.
+function actualizarCierre(mes) {
+  const idx = historicoCierres.findIndex(c => c.mes === mes);
+  if (idx < 0) return;
+  const txMes    = transactions.filter(t => t.fecha.startsWith(mes));
+  const ingresos = txMes.filter(t=>t.tipo==='Ingreso' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const gastos   = txMes.filter(t=>t.tipo==='Gasto' && !esTraspaso(t)).reduce((a,b)=>a+b.importe,0);
+  const ahorro   = ingresos - gastos;
+  const ahorroP  = ingresos > 0 ? (ahorro/ingresos*100).toFixed(1) : '0';
+  const viejo = historicoCierres[idx];
+  if (!confirm(`Actualizar el cierre de ${formatMonth(mes)} con los movimientos actuales?\n\nAntes:  ahorro ${fmt(viejo.ahorro)}\nAhora:  ahorro ${fmt(ahorro)}  (ingresos ${fmt(ingresos)} · gastos ${fmt(gastos)})`)) return;
+  historicoCierres[idx] = { mes, ingresos, gastos, ahorro, ahorroP, fechaGuardado: new Date().toISOString().split('T')[0] };
+  localStorage.setItem('wl_cierres', JSON.stringify(historicoCierres));
+  saveAll();
   renderCierre();
 }
 
